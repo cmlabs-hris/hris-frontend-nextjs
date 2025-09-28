@@ -1,2 +1,2 @@
 # hris-frontend-nextjs
-cmlabs
+cmlabs hris
