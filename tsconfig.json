@@ -18,6 +18,8 @@
         "name": "next"
       }
     ],
+    // TAMBAHKAN BARIS INI
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
