@@ -1,154 +1,148 @@
-"use client";
+'use client'
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { PieChart, Pie, Cell } from 'recharts';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { ArrowRight } from "lucide-react";
 
-// Data Dummy
+// --- Data Fiktif untuk Desain Baru ---
+const userStats = [
+    { title: "Work Hours", value: "120h 54m" },
+    { title: "On Time", value: "20" },
+    { title: "Late", value: "5" },
+    { title: "Absent", value: "10" },
+];
+
 const attendanceSummaryData = [
-    { name: 'Leave', value: 5 },
-    { name: 'Present', value: 85 },
-    { name: 'Sick', value: 3 },
-    { name: 'Late', value: 7 },
+    { name: 'Present', value: 85, color: '#16A34A' }, // Green
+    { name: 'Permit', value: 5, color: '#2563EB' },  // Dodger Blue
+    { name: 'Leave', value: 7, color: '#F59E0B' },   // Yellow Sea
+    { name: 'Sick', value: 3, color: '#DC2626' },     // Milan Red
 ];
-const COLORS_SUMMARY = ['#3b82f6', '#22c55e', '#ef4444', '#f97316'];
+// Hitung total dan persentase
+const totalAttendance = attendanceSummaryData.reduce((acc, curr) => acc + curr.value, 0);
+const presentPercentage = Math.round((attendanceSummaryData.find(d => d.name === 'Present')?.value || 0) / totalAttendance * 100);
 
-const weeklyStatsData = [
-  { name: 'June 13', value: 2 },
-  { name: 'June 14', value: 7 },
-  { name: 'June 15', value: 3 },
-  { name: 'June 16', value: 6 },
-  { name: 'June 17', value: 5 },
-  { name: 'June 18', value: 7 },
+
+const workHoursData = [
+    { name: 'March 20', value: 4 },
+    { name: 'March 21', value: 2 },
+    { name: 'March 22', value: 2.5 },
+    { name: 'March 23', value: 2 },
+    { name: 'March 24', value: 8 },
+    { name: 'March 25', value: 2 },
+    { name: 'March 26', value: 3 },
 ];
+
 
 export default function UserDashboard() {
   return (
-    <div className="flex flex-col gap-6">
-       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Total Employees</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold">190</p>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Total Employees</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold">190</p>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Total Employees</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold">190</p>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Total Employees</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold">190</p>
-                </CardContent>
-            </Card>
-       </div>
-       <div className="grid gap-6 lg:grid-cols-2">
+    <div className="space-y-6">
+        {/* Kartu Statistik Atas */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {userStats.map(stat => (
+                <Card key={stat.title}>
+                    <CardHeader>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-3xl font-bold">{stat.value}</p>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+
+        {/* Ringkasan Absensi & Cuti */}
+        <div className="grid gap-6 lg:grid-cols-2">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Attendance Summary</CardTitle>
-                    <Select defaultValue="month">
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select Month" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="month">This Month</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <Select defaultValue="months"><SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="months">Months</SelectItem></SelectContent></Select>
                 </CardHeader>
-                <CardContent className="flex items-center justify-center flex-col">
-                    <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                             <Pie data={attendanceSummaryData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={90} fill="#8884d8" paddingAngle={5}>
-                                {attendanceSummaryData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS_SUMMARY[index % COLORS_SUMMARY.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                        </PieChart>
-                    </ResponsiveContainer>
-                     <p className="text-2xl font-bold -mt-20">Total Presensi</p>
-                     <div className="mt-20 flex justify-center gap-4 text-sm flex-wrap">
-                        <span className="flex items-center"><div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>Leave</span>
-                        <span className="flex items-center"><div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>Present</span>
-                        <span className="flex items-center"><div className="w-2 h-2 rounded-full bg-red-500 mr-2"></div>Sick</span>
-                        <span className="flex items-center"><div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>Late</span>
+                <CardContent className="flex flex-col items-center justify-center gap-4 pt-4">
+                    <div className="relative w-48 h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie 
+                                    data={attendanceSummaryData} 
+                                    cx="50%" 
+                                    cy="50%" 
+                                    innerRadius={60} 
+                                    outerRadius={80} 
+                                    dataKey="value" 
+                                    stroke="none"
+                                    paddingAngle={5}
+                                    cornerRadius={8}
+                                >
+                                    {attendanceSummaryData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
+                                </Pie>
+                            </PieChart>
+                        </ResponsiveContainer>
+                        {/* --- PERUBAHAN DI SINI --- */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-4xl font-bold text-slate-800">{presentPercentage}%</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-center gap-4 text-sm pt-4 flex-wrap">
+                        {attendanceSummaryData.map(item => (
+                            <div key={item.name} className="flex items-center gap-2">
+                                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }}></span>
+                                <span>{item.name}</span>
+                            </div>
+                         ))}
                     </div>
                 </CardContent>
             </Card>
-            <div className="flex flex-col gap-6">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle>Leave Summary</CardTitle>
-                        <Select defaultValue="month">
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Select Month" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="month">This Month</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-4">
+            <Card>
+                 <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Leave Summary</CardTitle>
+                    <Select defaultValue="range"><SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="range">Rentan Waktu</SelectItem></SelectContent></Select>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4">
+                    <div className="p-4 border rounded-lg flex justify-between items-center">
+                        <div>
+                            <p className="text-sm text-muted-foreground flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-green-400"></span>Total Quota Annual Leave</p>
+                            <p className="text-2xl font-bold">12 Days</p>
+                        </div>
+                        <a href="#" className="text-xs text-blue-600 flex items-center">Request Leave <ArrowRight className="h-3 w-3 ml-1" /></a>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="p-4 border rounded-lg">
-                            <p className="text-sm text-muted-foreground">Total Quota Annual Leave</p>
-                            <p className="text-2xl font-bold">50</p>
+                             <p className="text-sm text-muted-foreground flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-green-400"></span>Taken</p>
+                            <p className="text-2xl font-bold">4 Days</p>
+                            <a href="#" className="text-xs text-blue-600 flex items-center mt-2">See Details <ArrowRight className="h-3 w-3 ml-1" /></a>
                         </div>
-                         <div className="grid grid-cols-2 gap-4">
-                             <div className="p-4 border rounded-lg">
-                                <p className="text-sm text-muted-foreground">Taken</p>
-                                <p className="text-2xl font-bold">32</p>
-                            </div>
-                             <div className="p-4 border rounded-lg">
-                                <p className="text-sm text-muted-foreground">Remaining</p>
-                                <p className="text-2xl font-bold">72</p>
-                            </div>
+                        <div className="p-4 border rounded-lg">
+                             <p className="text-sm text-muted-foreground flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-green-400"></span>Remaining</p>
+                            <p className="text-2xl font-bold">8 Days</p>
+                             <a href="#" className="text-xs text-blue-600 flex items-center mt-2">Request Leave <ArrowRight className="h-3 w-3 ml-1" /></a>
                         </div>
-                    </CardContent>
-                </Card>
-            </div>
-       </div>
-       <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
+        {/* Grafik Jam Kerja */}
+        <Card>
+             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                    <CardTitle>Employee Statistics</CardTitle>
-                    <CardDescription>Current Number of Employees</CardDescription>
+                    <CardTitle>Your Work Hours</CardTitle>
+                    <CardDescription>120h 54m</CardDescription>
                 </div>
-                <Select defaultValue="week">
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="View by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="week">View by Week</SelectItem>
-                        <SelectItem value="month">View by Month</SelectItem>
-                    </SelectContent>
-                </Select>
+                <Select defaultValue="week"><SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="week">View by Week</SelectItem></SelectContent></Select>
             </CardHeader>
-            <CardContent>
+             <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={weeklyStatsData}>
+                    <BarChart data={workHoursData} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="value" fill="#8884d8" />
+                        <XAxis dataKey="name" tickLine={false} axisLine={false} />
+                        <YAxis unit=" hr" tickLine={false} axisLine={false} domain={[0, 8]} ticks={[1, 4, 8]}/>
+                        <Tooltip 
+                            contentStyle={{ borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
+                            labelStyle={{ fontWeight: 'bold' }}
+                            formatter={(value) => [`${value} hr`, 'Work Hours']}
+                        />
+                        <Bar dataKey="value" fill="#16A34A" radius={[4, 4, 0, 0]} barSize={50} />
                     </BarChart>
                 </ResponsiveContainer>
             </CardContent>
@@ -156,3 +150,4 @@ export default function UserDashboard() {
     </div>
   );
 }
+

@@ -1,70 +1,87 @@
 'use client'
 
-import { Bell, Search, PanelLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Avatar, AvatarFallback, AvatarImage, } from "@/components/ui/avatar"
+import { usePathname } from 'next/navigation';
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { PanelLeft, Search, Bell } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/context/AuthContext';
 
-// Definisikan tipe props
-interface HeaderProps {
-  toggleSidebar: () => void;
-}
+export default function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+    const pathname = usePathname();
+    const { user, logout } = useAuth();
 
-export default function Header({ toggleSidebar }: HeaderProps) {
-  return (
-    <header className="flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6 sticky top-0 z-30">
-        {/* Tombol untuk membuka/menutup sidebar di layar besar */}
-        <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden lg:flex">
-            <PanelLeft className="h-5 w-5" />
-            <span className="sr-only">Toggle Sidebar</span>
-        </Button>
-        <div className="w-full flex-1">
-            <h1 className="text-lg font-semibold md:text-xl">DASHBOARD</h1>
-        </div>
-        <div className="flex items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-          <form className="ml-auto flex-1 sm:flex-initial">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search..."
-                className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px] bg-gray-100"
-              />
+    // Fungsi untuk mendapatkan judul halaman berdasarkan path
+    const getPageTitle = () => {
+        switch (pathname) {
+            case '/dashboard':
+                return 'DASHBOARD';
+            case '/employees':
+                return 'EMPLOYEE DATABASE';
+            case '/check-clock':
+                return 'CHECK CLOCK OVERVIEW';
+            case '/attendance':
+                return 'ATTENDANCE';
+            // Tambahkan case lain jika ada halaman baru
+            default:
+                // Fallback jika tidak ada yang cocok
+                return 'DASHBOARD';
+        }
+    };
+
+    return (
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
+            <Button size="icon" variant="outline" className="sm:hidden" onClick={onToggleSidebar}>
+                <PanelLeft className="h-5 w-5" />
+                <span className="sr-only">Toggle Menu</span>
+            </Button>
+            
+            {/* Judul Halaman Dinamis */}
+            <h1 className="font-semibold text-lg hidden sm:block">
+                {getPageTitle()}
+            </h1>
+
+            <div className="relative ml-auto flex-1 md:grow-0">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Search..."
+                    className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
+                />
             </div>
-          </form>
-          <Button variant="ghost" size="icon" className="h-9 w-9">
-            <Bell className="h-5 w-5" />
-            <span className="sr-only">Toggle notifications</span>
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" className="rounded-full">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="https://i.pravatar.cc/150?u=admin" />
-                  <AvatarFallback>KA</AvatarFallback>
-                </Avatar>
-                <span className="sr-only">Toggle user menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-    </header>
-  )
+            <Button variant="outline" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                <span className="sr-only">Toggle notifications</span>
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+            </Button>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="overflow-hidden rounded-full"
+                    >
+                        <Avatar>
+                            <AvatarImage src="https://i.pravatar.cc/40" alt="User Avatar" />
+                            <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+                        </Avatar>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>{user?.name || 'My Account'}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Settings</DropdownMenuItem>
+                    <DropdownMenuItem>Support</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={logout} className="text-red-500">Logout</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </header>
+    )
 }
 

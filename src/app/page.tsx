@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Menu, X, Users, BarChart3, Clock, Shield, ChevronRight, CheckCircle2, Star } from 'lucide-react';
+import { Menu, X, Users, BarChart3, Clock, Shield, ChevronRight, CheckCircle2, Star,} from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Link from "next/link";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -131,9 +132,9 @@ const HRISLanding = () => {
               <a href="#features" className="text-gray-700 hover:text-[#1E3A5F] transition-colors">Features</a>
               <a href="#solutions" className="text-gray-700 hover:text-[#1E3A5F] transition-colors">Solutions</a>
               <a href="#pricing" className="text-gray-700 hover:text-[#1E3A5F] transition-colors">Pricing</a>
-              <button className="px-6 py-2 bg-gradient-to-r from-[#1E3A5F] to-[#7CA5BF] text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all">
-                Get Started
-              </button>
+              <Link href="/auth" className="inline-block px-6 py-2 bg-gradient-to-r from-[#1E3A5F] to-[#7CA5BF] text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all">
+                Login
+              </Link>
             </div>
 
             {/* Mobile Menu Button */}

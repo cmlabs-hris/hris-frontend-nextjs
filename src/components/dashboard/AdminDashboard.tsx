@@ -1,208 +1,172 @@
-"use client";
+'use client'
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { PieChart, Pie, Cell, Legend } from 'recharts';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-// Data Dummy
-const employeeStatsData = [
-  { name: 'New', value: 16 },
+// --- Data Simulasi (Tidak Berubah) ---
+
+const barChartData = [
+  { name: 'New', value: 18 },
   { name: 'Active', value: 33 },
-  { name: 'Resign', value: 9 },
+  { name: 'Resign', value: 10 },
 ];
 
-const employeeStatusData = [
-  { name: 'Tetap Permanen', value: 17 },
-  { name: 'Tetap Percobaan', value: 26 },
-  { name: 'PKWT (Kontrak)', value: 22 },
-  { name: 'Magang', value: 37 },
+const horizontalBarData = [
+    { name: 'Magang', value: 37 },
+    { name: 'PKWT (Kontrak)', value: 22 },
+    { name: 'Tetap Percobaan', value: 26 },
+    { name: 'Tetap Permanen', value: 17 },
 ];
 
-const attendanceStatsData = [
-    { name: 'Ontime', value: 145 },
-    { name: 'Late', value: 23 },
-    { name: 'Sick', value: 8 },
+const attendanceData = [
+    { name: 'Ontime', value: 145, color: '#22c55e' }, // green-500
+    { name: 'Late', value: 23, color: '#f59e0b' },   // amber-500
+    { name: 'Sick', value: 8, color: '#ef4444' },    // red-500
 ];
-const COLORS_ATTENDANCE = ['#22c55e', '#f97316', '#ef4444']; // Green, Orange, Red
+const totalAttendance = attendanceData.reduce((acc, curr) => acc + curr.value, 0);
+const ontimePercentage = Math.round((attendanceData.find(d => d.name === 'Ontime')?.value || 0) / totalAttendance * 100);
 
-const attendanceListData = [
+
+const recentAttendance = [
     { no: 1, nama: 'Angga', status: 'On Time', checkIn: '08:30' },
     { no: 2, nama: 'Resi', status: 'Sick', checkIn: '-' },
     { no: 3, nama: 'Imanuel', status: 'Late', checkIn: '09:05' },
     { no: 4, nama: 'Hafiz', status: 'On Time', checkIn: '08:30' },
-    { no: 5, nama: 'Farel', status: 'On Time', checkIn: '08:30' },
+    { no: 5, nama: 'Farrel', status: 'On Time', checkIn: '08:30' },
 ];
 
 
 export default function AdminDashboard() {
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Employees</CardTitle>
-            <CardDescription>Update: December 31, 2025</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">190</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>New Employees</CardTitle>
-            <CardDescription>Update: December 31, 2025</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">17</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Active Employees</CardTitle>
-            <CardDescription>Update: December 31, 2025</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">34</p>
-          </CardContent>
-        </Card>
-        <Card className="border-primary">
-          <CardHeader>
-            <CardTitle>Resigned Employees</CardTitle>
-            <CardDescription>Update: December 31, 2025</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold text-primary">9</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Employee Statistics</CardTitle>
-                    <CardDescription>Current Number of Employees</CardDescription>
-                </div>
-                <Select defaultValue="month">
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select Month" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="month">This Month</SelectItem>
-                        <SelectItem value="year">This Year</SelectItem>
-                    </SelectContent>
-                </Select>
-            </CardHeader>
-            <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={employeeStatsData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="value" fill="#8884d8" />
-                    </BarChart>
-                </ResponsiveContainer>
-            </CardContent>
-        </Card>
-         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Employee Statistics</CardTitle>
-                    <CardDescription>Current Number of Employees</CardDescription>
-                </div>
-                <Select defaultValue="month">
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select Month" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="month">This Month</SelectItem>
-                        <SelectItem value="year">This Year</SelectItem>
-                    </SelectContent>
-                </Select>
-            </CardHeader>
-            <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                    <BarChart layout="vertical" data={employeeStatusData}>
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                        <XAxis type="number" />
-                        <YAxis dataKey="name" type="category" width={100} />
-                        <Tooltip />
-                        <Bar dataKey="value" fill="#82ca9d" />
-                    </BarChart>
-                </ResponsiveContainer>
-            </CardContent>
-        </Card>
-      </div>
-      
-      <div className="grid gap-6 lg:grid-cols-5">
-        <Card className="lg:col-span-2">
-             <CardHeader>
-                <CardTitle>Statistics Attendance</CardTitle>
-             </CardHeader>
-             <CardContent className="flex flex-col items-center">
-                 <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                        <Pie data={attendanceStatsData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5}>
-                             {attendanceStatsData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS_ATTENDANCE[index % COLORS_ATTENDANCE.length]} />
-                            ))}
-                        </Pie>
-                         <Tooltip />
-                    </PieChart>
-                </ResponsiveContainer>
-                <div className="mt-4 flex flex-col gap-2 text-center">
-                    <p className="text-2xl font-bold">Total: {attendanceStatsData.reduce((acc, curr) => acc + curr.value, 0)}</p>
-                    <div className="flex justify-center gap-4 text-sm">
-                        <span className="flex items-center"><div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>Ontime: {attendanceStatsData[0].value}</span>
-                        <span className="flex items-center"><div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>Late: {attendanceStatsData[1].value}</span>
-                        <span className="flex items-center"><div className="w-2 h-2 rounded-full bg-red-500 mr-2"></div>Sick: {attendanceStatsData[2].value}</span>
-                    </div>
-                </div>
-             </CardContent>
-        </Card>
-        <Card className="lg:col-span-3">
-             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Attendance</CardTitle>
-                <Select defaultValue="month">
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select Month" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="month">This Month</SelectItem>
-                        <SelectItem value="year">This Year</SelectItem>
-                    </SelectContent>
-                </Select>
-             </CardHeader>
-             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>No</TableHead>
-                            <TableHead>Nama</TableHead>
-                            <TableHead>Status Kehadiran</TableHead>
-                            <TableHead>Check In</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                         {attendanceListData.map((item) => (
-                            <TableRow key={item.no}>
-                                <TableCell>{item.no}</TableCell>
-                                <TableCell>{item.nama}</TableCell>
-                                <TableCell>
-                                    <Badge variant={item.status === 'On Time' ? 'default' : item.status === 'Late' ? 'destructive' : 'secondary'}>{item.status}</Badge>
-                                </TableCell>
-                                <TableCell>{item.checkIn}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-             </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+    return (
+        <div className="grid gap-6">
+            {/* Employee Statistics Charts */}
+            <div className="grid md:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Employee Statistics</CardTitle>
+                        <CardDescription>Current Number of Employees</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <ResponsiveContainer width="100%" height={250}>
+                            <BarChart data={barChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Bar dataKey="value" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                         <CardTitle>Employee Statistics</CardTitle>
+                        <CardDescription>Current Number of Employees by Status</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={250}>
+                             <BarChart data={horizontalBarData} layout="vertical" margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false}/>
+                                <XAxis type="number" />
+                                <YAxis type="category" dataKey="name" width={100} tickLine={false} axisLine={false} />
+                                <Tooltip />
+                                <Bar dataKey="value" fill="#82ca9d" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </div>
+            {/* Attendance Statistics */}
+             <div className="grid md:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Statistics Attendance</CardTitle>
+                    </CardHeader>
+                    {/* --- PERUBAHAN TATA LETAK KEMBALI KE AWAL --- */}
+                    <CardContent className="flex flex-col items-center justify-center gap-4 pt-4">
+                        <div className="relative w-52 h-52">
+                             <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={attendanceData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={65}
+                                        outerRadius={85}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        cornerRadius={8}
+                                    >
+                                        {attendanceData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-4xl font-bold text-slate-800">{ontimePercentage}%</span>
+                            </div>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-lg font-semibold text-slate-600">Total</p>
+                            <p className="text-3xl font-bold text-slate-800">{totalAttendance}</p>
+                        </div>
+                        <div className="flex items-center justify-center gap-6 text-sm pt-4">
+                             {attendanceData.map(item => (
+                                <div key={item.name} className="flex items-center gap-2">
+                                    <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }}></span>
+                                    <span>{item.name}:</span>
+                                    <span className="font-medium text-slate-700">{item.value}</span>
+                                </div>
+                             ))}
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Attendance</CardTitle>
+                         <Select defaultValue="this-month">
+                            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="this-month">This Month</SelectItem>
+                                <SelectItem value="last-month">Last Month</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </CardHeader>
+                     <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>No</TableHead>
+                                    <TableHead>Nama</TableHead>
+                                    <TableHead>Status Kehadiran</TableHead>
+                                    <TableHead>Check In</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {recentAttendance.map(att => (
+                                    <TableRow key={att.no}>
+                                        <TableCell>{att.no}</TableCell>
+                                        <TableCell>{att.nama}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={att.status === 'Late' ? 'destructive' : att.status === 'Sick' ? 'secondary' : 'default'}
+                                            className={att.status === 'On Time' ? 'bg-green-500' : ''}
+                                            >
+                                                {att.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>{att.checkIn}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
 }
+
