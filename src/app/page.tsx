@@ -130,7 +130,7 @@ const HRISLanding = () => {
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-700 hover:text-[#1E3A5F] transition-colors">Features</a>
-              <a href="#solutions" className="text-gray-700 hover:text-[#1E3A5F] transition-colors">Solutions</a>
+              {/* <a href="#solutions" className="text-gray-700 hover:text-[#1E3A5F] transition-colors">Solutions</a> */}
               <a href="#pricing" className="text-gray-700 hover:text-[#1E3A5F] transition-colors">Pricing</a>
               <Link href="/auth" className="inline-block px-6 py-2 bg-gradient-to-r from-[#1E3A5F] to-[#7CA5BF] text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all">
                 Login
@@ -152,7 +152,7 @@ const HRISLanding = () => {
           <div className="md:hidden bg-white border-t animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="px-4 py-4 space-y-4">
               <a href="#features" className="block text-gray-700">Features</a>
-              <a href="#solutions" className="block text-gray-700">Solutions</a>
+              {/* <a href="#solutions" className="block text-gray-700">Solutions</a> */}
               <a href="#pricing" className="block text-gray-700">Pricing</a>
               <button className="w-full px-6 py-2 bg-gradient-to-r from-[#1E3A5F] to-[#7CA5BF] text-white rounded-lg">
                 Get Started
