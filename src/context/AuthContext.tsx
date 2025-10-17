@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (email.toLowerCase() === 'admin@gmail.com') {
       setUser({ name: 'KroKrok', email: email, role: 'admin' });
       router.push('/dashboard');
-    } else if (email.includes('@')) { // Asumsikan email lain adalah user biasa
+    } else if (email.includes('@')) { // email lain adalah user biasa
       setUser({ name: 'John Doe', email: email, role: 'user' });
       router.push('/dashboard');
     } else {

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-// --- DATA SIMULASI KARYAWAN (sekarang berada di sini) ---
+// --- DATA SIMULASI KARYAWAN  ---
 const employees = [
     { id: 1, name: "John Doe", gender: "Laki - Laki", phone: "08123456789", branch: "Jakarta", position: "Developer", status: "Active" },
     { id: 2, name: "Jane Smith", gender: "Perempuan", phone: "08123456789", branch: "Bandung", position: "Designer", status: "Active" },
@@ -21,7 +21,7 @@ const employees = [
 ];
 
 
-// Komponen Filter Dialog (sekarang berada di sini)
+// Komponen Filter Dialog
 const FilterDialog = () => {
     return (
         <Dialog>
@@ -49,7 +49,6 @@ const FilterDialog = () => {
 
 
 export default function EmployeePage() {
-    // --- FUNGSI UNDUH PDF (Diperbaiki) ---
     const handleDownloadPDF = () => {
         const doc = new jsPDF();
         doc.text("All Employee Information Report", 14, 16);
@@ -60,7 +59,6 @@ export default function EmployeePage() {
             tableRows.push(employeeData);
         });
         
-        // Cara pemanggilan yang benar
         autoTable(doc, { 
             head: [tableColumn], 
             body: tableRows, 

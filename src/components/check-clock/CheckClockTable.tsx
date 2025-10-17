@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import dynamic from 'next/dynamic'; // 1. Import dynamic
+import dynamic from 'next/dynamic'; 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,19 +17,17 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-// 2. Impor peta secara dinamis untuk menghindari error SSR
 const AttendanceMap = dynamic(() => import('@/components/attendance/AttendanceMap'), { 
     ssr: false,
     loading: () => <div className="h-full w-full bg-gray-200 dark:bg-gray-800 rounded-lg flex items-center justify-center"><p className="text-gray-500">Loading map...</p></div>
 });
 
-// 3. Definisikan lokasi dan koordinatnya
 const locations = {
     "kantor-pusat": { lat: -7.9766, lon: 112.631, address: "Kota Malang, Jawa Timur" },
     "cabang-jakarta": { lat: -6.2088, lon: 106.8456, address: "Jakarta Pusat, DKI Jakarta" },
 };
 
-// --- Data Simulasi (Tidak Berubah) ---
+// --- Data Simulasi  ---
 const initialAttendanceData = [
     { id: 1, employeeName: "Emily Davis", jabatan: "Developer", clockIn: "08:30", clockOut: "16:30", workHours: 8, approve: "Cabang Jakarta", status: "Waiting", statusApprove: "Waiting" },
     { id: 2, employeeName: "Jane Doe", jabatan: "Designer", clockIn: "08:32", clockOut: "16:30", workHours: 8, approve: "Cabang Bandung", status: "OnTime", statusApprove: "Approved" },
@@ -38,9 +36,8 @@ const initialAttendanceData = [
 ];
 
 
-// --- Komponen Anak untuk Interaksi ---
 
-// Dialog untuk Menambah Absensi Baru (DIPERBARUI DENGAN PETA)
+// Menambah Absensi Baru 
 const AddCheckClockDialog = () => {
     const [selectedLocation, setSelectedLocation] = useState<keyof typeof locations>("kantor-pusat");
     const currentPosition: [number, number] = [locations[selectedLocation].lat, locations[selectedLocation].lon];
@@ -99,7 +96,7 @@ const AddCheckClockDialog = () => {
     );
 };
 
-// ... (Sisa komponen ViewAttendanceSheet dan ApproveAttendanceDialog tidak berubah) ...
+// ... (Sisa komponen ViewAttendanceSheet dan ApproveAttendanceDialog) ...
 const ViewAttendanceSheet = ({ record }: { record: any }) => ( <Sheet><SheetTrigger asChild><Button variant="outline" size="sm">View</Button></SheetTrigger><SheetContent className="w-[400px] sm:w-[540px]"><SheetHeader><SheetTitle>Approve Attendance</SheetTitle><SheetDescription>Detailed attendance information for {record.employeeName}.</SheetDescription></SheetHeader><div className="space-y-6 py-4"><div className="flex items-center gap-4 p-4 border rounded-lg"><div className="w-12 h-12 bg-gray-200 rounded-full" /><div><p className="font-semibold">{record.employeeName}</p><p className="text-sm text-gray-500">{record.jabatan}</p></div><Badge variant={record.statusApprove === 'Approved' ? 'default' : 'secondary'} className="ml-auto">{record.statusApprove}</Badge></div><Card><CardHeader><CardTitle>Attendance Information</CardTitle></CardHeader><CardContent className="space-y-2"><div className="flex justify-between"><span>Date:</span> <span>1 June 2025</span></div><div className="flex justify-between"><span>Check In:</span> <span>{record.clockIn}</span></div><div className="flex justify-between"><span>Check Out:</span> <span>{record.clockOut}</span></div><div className="flex justify-between"><span>Work Hours:</span> <span>{record.workHours}</span></div></CardContent></Card><Card><CardHeader><CardTitle>Location Information</CardTitle></CardHeader><CardContent className="space-y-2"><div className="flex justify-between"><span>Location:</span> <span>Kantor Pusat</span></div><div className="flex justify-between"><span>Address:</span> <span>Jl. Veteran No.1, Kota Malang</span></div></CardContent></Card><Card><CardHeader><CardTitle>Proof of Attendance</CardTitle></CardHeader><CardContent className="flex items-center justify-between"><p>Proof of Attendance.JPEG</p><div className="flex gap-2"><Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button><Button variant="ghost" size="icon"><FileDown className="h-4 w-4" /></Button></div></CardContent></Card></div></SheetContent></Sheet>);
 const ApproveAttendanceDialog = ({ onApprove }: { onApprove: () => void }) => ( <AlertDialog><AlertDialogTrigger asChild><Badge className="cursor-pointer bg-yellow-400 hover:bg-yellow-500 text-yellow-900">Waiting</Badge></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Approve Attendance</AlertDialogTitle><AlertDialogDescription>Are you sure you want to approve this employee's attendance? This action cannot be undone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Reject</AlertDialogCancel><AlertDialogAction onClick={onApprove}>Approve</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>);
 

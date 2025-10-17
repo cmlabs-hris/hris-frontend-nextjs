@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useEffect } from 'react';
 
-// Perbaikan untuk ikon default Leaflet
+
 // @ts-ignore
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -21,10 +21,8 @@ type Position = [number, number];
 function ChangeView({ center }: { center: Position }) {
     const map = useMap();
     useEffect(() => {
-        // --- PERBAIKAN DI SINI ---
-        // Tambahkan pengecekan untuk memastikan 'map' sudah siap
         if (map) {
-            map.setView(center, 15); // Zoom level 15
+            map.setView(center, 15); 
         }
     }, [center, map]);
     return null;

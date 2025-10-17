@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { format } from "date-fns"
-import dynamic from "next/dynamic"; // Import dynamic
+import dynamic from "next/dynamic"; 
 import { Calendar as CalendarIcon, UploadCloud } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -95,8 +95,6 @@ export default function AttendanceForm() {
                     <Label>Lokasi</Label>
                     <Select value={selectedLocation} onValueChange={(value) => setSelectedLocation(value as keyof typeof locations)}>
                         <SelectTrigger><SelectValue placeholder="Pilih Lokasi" /></SelectTrigger>
-                        {/* --- PERBAIKAN DI SINI --- */}
-                        {/* Tambahkan z-index agar dropdown muncul di atas peta */}
                         <SelectContent className="z-50">
                             <SelectItem value="kantor-pusat">Kantor Pusat - Malang</SelectItem>
                             <SelectItem value="cabang-jakarta">Cabang Jakarta</SelectItem>
@@ -109,7 +107,7 @@ export default function AttendanceForm() {
             <div className="space-y-6">
                  
 
-                {/* Ganti Placeholder dengan Peta Interaktif */}
+                {/* Placeholder dengan Peta Interaktif */}
                 <div className="h-48 w-full rounded-lg overflow-hidden">
                     <AttendanceMap position={currentPosition} />
                 </div>

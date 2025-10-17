@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import AnimatedBubbles from '@/components/auth/AnimatedBubbles';
 import { ArrowLeft } from 'lucide-react';
 
-// SVG untuk ilustrasi 404
 const Illustration404 = () => (
     <svg width="100" height="80" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-auto mb-6">
         <rect width="100" height="70" rx="8" fill="#E2E8F0"/>

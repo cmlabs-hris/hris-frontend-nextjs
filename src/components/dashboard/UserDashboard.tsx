@@ -14,10 +14,10 @@ const userStats = [
 ];
 
 const attendanceSummaryData = [
-    { name: 'Present', value: 85, color: '#16A34A' }, // Green
-    { name: 'Permit', value: 5, color: '#2563EB' },  // Dodger Blue
-    { name: 'Leave', value: 7, color: '#F59E0B' },   // Yellow Sea
-    { name: 'Sick', value: 3, color: '#DC2626' },     // Milan Red
+    { name: 'Present', value: 85, color: '#16A34A' }, 
+    { name: 'Permit', value: 5, color: '#2563EB' },  
+    { name: 'Leave', value: 7, color: '#F59E0B' },   
+    { name: 'Sick', value: 3, color: '#DC2626' },     
 ];
 // Hitung total dan persentase
 const totalAttendance = attendanceSummaryData.reduce((acc, curr) => acc + curr.value, 0);

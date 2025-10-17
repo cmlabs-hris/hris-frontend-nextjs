@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link"
-import Image from "next/image" // 1. Import komponen Image
+import Image from "next/image" 
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -31,11 +31,10 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
     const renderNavItem = (item: typeof navItems[0]) => {
         const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname?.startsWith(item.href));
         
-        // 3. Ubah warna teks agar kontras dengan latar belakang biru
         const linkClasses = cn(
             "flex items-center gap-4 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
             "hover:bg-blue-900/50 hover:text-white", // Efek hover
-            isActive ? "bg-blue-900/60 text-white" : "text-black" // Kondisi aktif vs tidak aktif
+            isActive ? "bg-blue-900/60 text-white" : "text-black" 
         );
 
         if (isOpen) {
@@ -65,7 +64,6 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
     };
 
     return (
-        // 2. GANTI WARNA SIDEBAR DI SINI
         <aside className={cn(
             "fixed inset-y-0 left-0 z-10 flex-col border-r sm:flex transition-all duration-300 ease-in-out",
             "bg-white ",
@@ -73,11 +71,8 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
         )}>
             <nav className="flex flex-col h-full gap-2 p-4">
                 <div className="flex items-center  h-10 mb-4">
-                    {/* 4. GANTI LOGO DENGAN GAMBAR DI SINI */}
                     {isOpen ? (
-                        // Tampilan logo saat sidebar terbuka
                         <Image
-                            // Ganti URL ini dengan path logo Anda
                             src="/logo.png"
                             alt="HRIS Logo"
                             width={100}
@@ -85,9 +80,7 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
                             priority
                         />
                     ) : (
-                        // Tampilan logo saat sidebar tertutup
                          <Image
-                            // Ganti URL ini dengan path ikon Anda
                             src="/logo.png"
                             alt="HRIS Icon"
                             width={40}

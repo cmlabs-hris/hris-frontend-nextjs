@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-// --- Data Simulasi (Tidak Berubah) ---
+// --- Data Simulasi ---
 
 const barChartData = [
   { name: 'New', value: 18 },
@@ -22,9 +22,9 @@ const horizontalBarData = [
 ];
 
 const attendanceData = [
-    { name: 'Ontime', value: 145, color: '#22c55e' }, // green-500
-    { name: 'Late', value: 23, color: '#f59e0b' },   // amber-500
-    { name: 'Sick', value: 8, color: '#ef4444' },    // red-500
+    { name: 'Ontime', value: 145, color: '#22c55e' }, 
+    { name: 'Late', value: 23, color: '#f59e0b' },   
+    { name: 'Sick', value: 8, color: '#ef4444' },   
 ];
 const totalAttendance = attendanceData.reduce((acc, curr) => acc + curr.value, 0);
 const ontimePercentage = Math.round((attendanceData.find(d => d.name === 'Ontime')?.value || 0) / totalAttendance * 100);

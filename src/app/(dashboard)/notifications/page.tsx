@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Bell, Check, Briefcase } from "lucide-react";
 
-// Data fiktif yang lebih banyak
+// Data fiktif 
 const allNotifications = [
     { id: 1, icon: Check, title: "Attendance Approved", description: "Your attendance for Oct 14 has been approved.", time: "5 min ago", read: false },
     { id: 2, icon: Briefcase, title: "New Task Assigned", description: "You have a new task in the 'Employee Onboarding' project.", time: "1 hour ago", read: false },

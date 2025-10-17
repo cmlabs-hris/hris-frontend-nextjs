@@ -94,7 +94,6 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p>Notification settings will be here...</p>
-            {/* Nanti kita bisa tambahkan switch/toggle di sini */}
           </CardContent>
            <CardFooter>
             <Button>Save preferences</Button>

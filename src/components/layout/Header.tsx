@@ -4,11 +4,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import { PanelLeft, Search } from "lucide-react" // Hapus Bell dari sini
+import { PanelLeft, Search } from "lucide-react" 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/AuthContext';
 import { ThemeToggle } from './ThemeToggle';
-import { NotificationBell } from './NotificationBell'; // 1. Import komponen notifikasi
+import { NotificationBell } from './NotificationBell'; 
 
 export default function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
     const pathname = usePathname();
@@ -45,7 +45,6 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar: () => voi
                 
                 {/* <ThemeToggle /> */}
 
-                {/* 2. Ganti tombol lama dengan komponen baru */}
                 <NotificationBell />
 
                 <DropdownMenu>
