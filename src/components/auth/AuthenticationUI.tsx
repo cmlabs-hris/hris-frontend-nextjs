@@ -38,8 +38,8 @@ const SignInForm = () => {
         <div className="p-8 md:p-12 flex flex-col justify-center h-full">
             <div className="self-end"><HrisLogo /></div>
             <div className="mt-auto">
-                <h2 className="text-3xl font-bold text-slate-800">Sign In</h2>
-                <p className="text-slate-500 mt-2 mb-8">Welcome back to HRIS. Manage everything with ease.</p>
+                <h2 className="text-3xl font-bold text-slate-800 mb-10">Sign In</h2>
+                <p className="text-slate-500 mt-2 mb-10">Welcome back to HRIS. Manage everything with ease.</p>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-1">
                         <Label htmlFor="email-signin">Email or Phone Number</Label>
@@ -77,13 +77,13 @@ const SignUpForm = () => {
         <div className="p-8 md:p-12 flex flex-col justify-center h-full">
             <div className="self-start"><HrisLogo /></div>
              <div className="mt-auto">
-                <h2 className="text-3xl font-bold text-slate-800">Sign Up</h2>
-                <p className="text-slate-500 mt-2 mb-8">Create your account and streamline your employee management.</p>
+                <h2 className="text-3xl font-bold text-slate-800 mb-10">Sign Up</h2>
+                <p className="text-slate-500 mt-2 mb-10">Create your account and streamline your employee management.</p>
                 <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1"><Label htmlFor="first-name">First Name</Label><Input id="first-name" placeholder="Enter your first name" required /></div>
                         <div className="space-y-1"><Label htmlFor="last-name">Last Name</Label><Input id="last-name" placeholder="Enter your last name" required /></div>
-                    </div>
+                    </div> */}
                     <div className="space-y-1"><Label htmlFor="email-signup">Email</Label><Input id="email-signup" type="email" placeholder="Enter email" required /></div>
                     <div className="space-y-1"><Label htmlFor="password-signup">Password</Label><Input id="password-signup" type="password" placeholder="Enter password" required /></div>
                     <div className="space-y-1"><Label htmlFor="confirm-password">Confirm Password</Label><Input id="confirm-password" type="password" placeholder="Enter confirm password" required /></div>
