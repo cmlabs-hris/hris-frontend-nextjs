@@ -38,8 +38,12 @@ export default function CreateCompanyPage() {
                 <CardContent>
                     <form onSubmit={handleCreateCompany} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="company-name">Company Name</Label>
+                            <Label htmlFor="company-name">Company Username</Label>
                             <Input id="company-name" placeholder="Enter company name" required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="company-address">Company Address</Label>
+                            <Input id="company-address" placeholder="Enter address" required />
                         </div>
                         <Button type="submit" className="w-full">Create Company</Button>
                     </form>

@@ -35,7 +35,7 @@ export default function JoinCompanyPage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="bg-blue-200 text-blue-800 font-bold p-3 rounded-md">CI</div>
-                                <span>Cmlabs Indonesia Digital</span>
+                                <span>CmlabsIndonesiaDigital</span>
                             </div>
                             <Button onClick={handleJoin}>Join</Button>
                         </div>
