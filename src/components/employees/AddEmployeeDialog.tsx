@@ -4,6 +4,7 @@ import React, { useState } from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon, PlusCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -13,10 +14,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Employee } from "@/app/(dashboard)/employees/page";
+import { format as formatDate } from "date-fns";
 
-// --- Komponen Date Picker Kustom ---
+// --- Komponen Date Picker Kustom (DIPERBARUI) ---
 function DatePicker({ date, onDateChange }: { date: Date | undefined, onDateChange: (date: Date | undefined) => void }) {
-  return (
+ return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
@@ -35,6 +37,10 @@ function DatePicker({ date, onDateChange }: { date: Date | undefined, onDateChan
           mode="single"
           selected={date}
           onSelect={onDateChange}
+          // --- PENAMBAHAN PROPERTI BARU DI SINI ---
+          captionLayout="dropdown"
+          fromYear={1960}
+          toYear={2030}
           initialFocus
         />
       </PopoverContent>
@@ -47,7 +53,13 @@ export default function AddEmployeeDialog({ onAddEmployee }: { onAddEmployee: (e
     const [isOpen, setIsOpen] = useState(false);
     
     // State untuk semua field di form
-    const [formData, setFormData] = useState<Partial<Omit<Employee, 'id'>>>({});
+    const [formData, setFormData] = useState<Partial<Omit<Employee, 'id'>>>({
+        contractType: 'Tetap'
+    });
+    // State terpisah untuk tanggal lahir
+    const [birthDate, setBirthDate] = useState<Date | undefined>();
+    // State terpisah untuk tanggal masuk kerja
+    const [dateHired, setDateHired] = useState<Date | undefined>();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
@@ -60,26 +72,37 @@ export default function AddEmployeeDialog({ onAddEmployee }: { onAddEmployee: (e
 
     const handleSubmit = () => {
         // Validasi sederhana
-        if (!formData.name || !formData.position) {
-            alert("Name and Position are required.");
+        if (!formData.name || !formData.lastName) {
+            alert("First Name and Last Name are required.");
             return;
         }
 
-        const newEmployeeData = {
-            ...formData,
-            name: formData.name || '',
-            position: formData.position || '',
-            nik: formData.nik || '',
-            gender: formData.gender || 'Laki - Laki',
-            phone: formData.mobileNumber || 'N/A',
-            branch: formData.branch || 'N/A',
-            status: 'Active' as const,
-        } as Omit<Employee, 'id'>;
+        const newEmployeeData: Omit<Employee, 'id'> = {
+            name: `${formData.name} ${formData.lastName}`.trim(),
+            lastName: formData.lastName ?? '',
+            gender: formData.gender ?? 'Laki - Laki',
+            position: formData.position ?? 'N/A',
+            phone: formData.mobileNumber ?? 'N/A',
+            branch: formData.branch ?? 'N/A',
+            status: 'Active',
+            contractType: formData.contractType ?? 'Tetap',
+            birthDate: birthDate ?? new Date(),
+            dateHired: formData.dateHired ?? new Date(),
+            nik: formData.nik ?? '',
+            education: formData.education ?? '',
+            birthPlace: formData.birthPlace ?? '',
+            bank: formData.bank ?? '',
+            accountHolder: formData.accountHolder ?? '',
+            accountNumber: formData.accountNumber ?? '',
+            grade: formData.grade ?? '',
+            spType: formData.spType ?? '',
+        };
 
         onAddEmployee(newEmployeeData);
 
         // Reset form dan tutup dialog
-        setFormData({});
+        setFormData({ contractType: 'Tetap' });
+        setBirthDate(undefined);
         setIsOpen(false);
     };
 
@@ -139,49 +162,45 @@ export default function AddEmployeeDialog({ onAddEmployee }: { onAddEmployee: (e
                         </div>
                         <div className="space-y-2">
                             <Label>Tipe Kontrak</Label>
-                             <Select onValueChange={(v) => handleSelectChange('contractType', v)}>
-                                <SelectTrigger><SelectValue placeholder="Enter your kontrak" /></SelectTrigger>
-                                <SelectContent>
-                                     <SelectItem value="tetap">Tetap</SelectItem>
-                                     <SelectItem value="kontrak">Kontrak</SelectItem>
-                                     <SelectItem value="freelance">Freelance</SelectItem>
-                                     <SelectItem value="intern">Intern</SelectItem>
-                                </SelectContent>
-                            </Select>
+                             <RadioGroup defaultValue="Tetap" onValueChange={(v) => handleSelectChange('contractType', v)} className="flex items-center gap-4">
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="Tetap" id="tetap" /><Label htmlFor="tetap">Tetap</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="Kontrak" id="kontrak" /><Label htmlFor="kontrak">Kontrak</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="Lepas" id="lepas" /><Label htmlFor="lepas">Lepas</Label></div>
+                            </RadioGroup>
                         </div>
                         <div className="space-y-2">
                              <Label>Bank</Label>
-                            <Select><SelectTrigger><SelectValue placeholder="-Pilih Bank-" /></SelectTrigger><SelectContent><SelectItem value="bca">BCA</SelectItem><SelectItem value="mandiri">Mandiri</SelectItem></SelectContent></Select>
+                            <Select onValueChange={(v) => handleSelectChange('bank', v)}><SelectTrigger><SelectValue placeholder="-Pilih Bank-" /></SelectTrigger><SelectContent><SelectItem value="bca">BCA</SelectItem><SelectItem value="mandiri">Mandiri</SelectItem></SelectContent></Select>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="accountHolder">Atas Nama Rekening</Label>
-                            <Input id="accountHolder" placeholder="Masukan A/N Rekening" />
+                            <Input id="accountHolder" onChange={handleInputChange} placeholder="Masukan A/N Rekening" />
                         </div>
                     </div>
                     {/* Kolom Kanan */}
-                     <div className="space-y-4 mt-[140px]">
+                     <div className="space-y-4 mt-auto">
                         <div className="space-y-2">
                             <Label htmlFor="lastName">Last Name</Label>
-                            <Input id="lastName" placeholder="Enter the last name" />
+                            <Input id="lastName" onChange={handleInputChange} placeholder="Enter the last name" />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="nik">NIK</Label>
-                            <Input id="nik" placeholder="Enter the NIK" />
+                            <Input id="nik" onChange={handleInputChange} placeholder="Enter the NIK" />
                         </div>
                         <div className="space-y-2">
                             <Label>Pendidikan Terakhir</Label>
-                             <Select>
+                             <Select onValueChange={(v) => handleSelectChange('education', v)}>
                                 <SelectTrigger><SelectValue placeholder="-Pilih Pendidikan Terakhir-" /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="sma">SMA/SMK</SelectItem>
-                                    <SelectItem value="d3">D3</SelectItem>
-                                    <SelectItem value="s1">S1</SelectItem>
+                                    <SelectItem value="SMA/SMK">SMA/SMK</SelectItem>
+                                    <SelectItem value="D3">D3</SelectItem>
+                                    <SelectItem value="S1">S1</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
                             <Label>Tanggal Lahir</Label>
-                            <DatePicker date={undefined} onDateChange={() => {}} />
+                            <DatePicker date={birthDate} onDateChange={setBirthDate} />
                         </div>
                          <div className="space-y-2">
                             <Label>Cabang</Label>
@@ -196,7 +215,7 @@ export default function AddEmployeeDialog({ onAddEmployee }: { onAddEmployee: (e
                         </div>
                          <div className="space-y-2">
                             <Label>Grade</Label>
-                            <Select>
+                            <Select onValueChange={(v) => handleSelectChange('grade', v)}>
                                 <SelectTrigger><SelectValue placeholder="Masukan Grade Anda" /></SelectTrigger>
                                 <SelectContent>
                                      <SelectItem value="Junior">Junior</SelectItem>
@@ -206,17 +225,22 @@ export default function AddEmployeeDialog({ onAddEmployee }: { onAddEmployee: (e
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="accountNumber">Nomor Rekening</Label>
-                            <Input id="accountNumber" placeholder="Masukan Nomor Rekening" />
+                            <Input id="accountNumber" onChange={handleInputChange} placeholder="Masukan Nomor Rekening" />
                         </div>
                         <div className="space-y-2">
                             <Label>Tipe SP</Label>
-                             <Select>
+                             <Select onValueChange={(v) => handleSelectChange('spType', v)}>
                                 <SelectTrigger><SelectValue placeholder="-Pilih SP-" /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="sp1">SP 1</SelectItem>
-                                    <SelectItem value="sp2">SP 2</SelectItem>
+                                    <SelectItem value="SP1">None</SelectItem>
+                                    <SelectItem value="SP1">SP 1</SelectItem>
+                                    <SelectItem value="SP2">SP 2</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Date Hired</Label>
+                            <DatePicker date={dateHired} onDateChange={setDateHired} />
                         </div>
                     </div>
                 </div>
