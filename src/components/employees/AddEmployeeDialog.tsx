@@ -1,10 +1,9 @@
 'use client'
 
-import * as React from "react"
+import React, { useState } from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon, PlusCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
-
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -13,11 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Employee } from "@/app/(dashboard)/employees/page";
 
 // --- Komponen Date Picker Kustom ---
-function DatePicker() {
-  const [date, setDate] = React.useState<Date>()
-
+function DatePicker({ date, onDateChange }: { date: Date | undefined, onDateChange: (date: Date | undefined) => void }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -29,14 +27,14 @@ function DatePicker() {
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>Pick a date</span>}
+          {date ? format(date, "dd/MM/yyyy") : <span>dd/mm/yyyy</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
         <Calendar
           mode="single"
           selected={date}
-          onSelect={setDate}
+          onSelect={onDateChange}
           initialFocus
         />
       </PopoverContent>
@@ -45,9 +43,48 @@ function DatePicker() {
 }
 
 
-export default function AddEmployeeDialog() {
+export default function AddEmployeeDialog({ onAddEmployee }: { onAddEmployee: (employee: Omit<Employee, 'id'>) => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    
+    // State untuk semua field di form
+    const [formData, setFormData] = useState<Partial<Omit<Employee, 'id'>>>({});
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        setFormData(prev => ({ ...prev, [id]: value }));
+    };
+
+    const handleSelectChange = (id: keyof Omit<Employee, 'id'>, value: string) => {
+        setFormData(prev => ({ ...prev, [id]: value }));
+    };
+
+    const handleSubmit = () => {
+        // Validasi sederhana
+        if (!formData.name || !formData.position) {
+            alert("Name and Position are required.");
+            return;
+        }
+
+        const newEmployeeData = {
+            ...formData,
+            name: formData.name || '',
+            position: formData.position || '',
+            nik: formData.nik || '',
+            gender: formData.gender || 'Laki - Laki',
+            phone: formData.mobileNumber || 'N/A',
+            branch: formData.branch || 'N/A',
+            status: 'Active' as const,
+        } as Omit<Employee, 'id'>;
+
+        onAddEmployee(newEmployeeData);
+
+        // Reset form dan tutup dialog
+        setFormData({});
+        setIsOpen(false);
+    };
+
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button size="sm" className="gap-1">
                     <PlusCircle className="h-4 w-4" />
@@ -57,118 +94,135 @@ export default function AddEmployeeDialog() {
             <DialogContent className="max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>Add New Employee</DialogTitle>
-                    <DialogDescription>Fill in the form below to add a new employee.</DialogDescription>
                 </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 max-h-[70vh] overflow-y-auto pr-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 py-4 max-h-[80vh] overflow-y-auto pr-6">
                     {/* Kolom Kiri */}
                     <div className="space-y-4">
                         <div className="flex flex-col items-center gap-4">
-                             <div className="w-24 h-24 rounded-lg bg-slate-200" />
+                             <div className="w-24 h-24 rounded-lg bg-slate-200 flex items-center justify-center text-slate-400">
+                                <span className="text-sm">Avatar</span>
+                             </div>
                              <Button variant="outline" size="sm">Upload Avatar</Button>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="company-name">Company Name</Label>
-                            <Input id="company-name" placeholder="Enter your first company" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="mobile-number">Mobile Number</Label>
-                            <Input id="mobile-number" placeholder="Enter your first Mobile Number" />
+                            <Label htmlFor="name">First Name</Label>
+                            <Input id="name" onChange={handleInputChange} placeholder="Enter the first name" />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="gender">Gender</Label>
-                             <Select>
-                                <SelectTrigger><SelectValue placeholder="--Choose Gender--" /></SelectTrigger>
+                            <Label htmlFor="mobileNumber">Mobile Number</Label>
+                            <Input id="mobileNumber" onChange={handleInputChange} placeholder="Enter the Mobile Number" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label>Gender</Label>
+                             <Select onValueChange={(v) => handleSelectChange('gender', v)}>
+                                <SelectTrigger><SelectValue placeholder="-Choose Gender-" /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="male">Laki - Laki</SelectItem>
-                                    <SelectItem value="female">Perempuan</SelectItem>
+                                    <SelectItem value="Laki - Laki">Laki - Laki</SelectItem>
+                                    <SelectItem value="Perempuan">Perempuan</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="birth-place">Tempat Lahir</Label>
-                            <Input id="birth-place" placeholder="Masukan tempat Lahir" />
+                            <Label htmlFor="birthPlace">Tempat Lahir</Label>
+                            <Input id="birthPlace" onChange={handleInputChange} placeholder="Masukan Tempat Lahir" />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="position">Jabatan</Label>
-                            <Input id="position" placeholder="Enter your jabatan" />
+                            <Label>Jabatan</Label>
+                            <Select onValueChange={(v) => handleSelectChange('position', v)}>
+                                <SelectTrigger><SelectValue placeholder="Enter your jabatan" /></SelectTrigger>
+                                <SelectContent>
+                                     <SelectItem value="Software Engineer">Software Engineer</SelectItem>
+                                     <SelectItem value="UI/UX Designer">UI/UX Designer</SelectItem>
+                                     <SelectItem value="Manager">Manager</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Tipe Kontrak</Label>
+                             <Select onValueChange={(v) => handleSelectChange('contractType', v)}>
+                                <SelectTrigger><SelectValue placeholder="Enter your kontrak" /></SelectTrigger>
+                                <SelectContent>
+                                     <SelectItem value="tetap">Tetap</SelectItem>
+                                     <SelectItem value="kontrak">Kontrak</SelectItem>
+                                     <SelectItem value="freelance">Freelance</SelectItem>
+                                     <SelectItem value="intern">Intern</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                             <Label>Bank</Label>
+                            <Select><SelectTrigger><SelectValue placeholder="-Pilih Bank-" /></SelectTrigger><SelectContent><SelectItem value="bca">BCA</SelectItem><SelectItem value="mandiri">Mandiri</SelectItem></SelectContent></Select>
                         </div>
                          <div className="space-y-2">
-                            <Label>Tipe Kontak</Label>
-                            <RadioGroup defaultValue="tetap" className="flex items-center gap-4">
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="tetap" id="tetap" />
-                                    <Label htmlFor="tetap">Tetap</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="kontrak" id="kontrak" />
-                                    <Label htmlFor="kontrak">Kontrak</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="bank">Bank</Label>
-                            <Input id="bank" placeholder="Enter the bank" />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="account-holder">Atas Nama Rekening</Label>
-                            <Input id="account-holder" placeholder="Enter the account holder name" />
+                            <Label htmlFor="accountHolder">Atas Nama Rekening</Label>
+                            <Input id="accountHolder" placeholder="Masukan A/N Rekening" />
                         </div>
                     </div>
                     {/* Kolom Kanan */}
-                     <div className="space-y-4">
+                     <div className="space-y-4 mt-[140px]">
                         <div className="space-y-2">
-                            <Label htmlFor="company-username">Company Username</Label>
-                            <Input id="company-username" placeholder="Enter your Company Username" />
+                            <Label htmlFor="lastName">Last Name</Label>
+                            <Input id="lastName" placeholder="Enter the last name" />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="nik">NIK</Label>
                             <Input id="nik" placeholder="Enter the NIK" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="education">Pendidikan Terakhir</Label>
+                            <Label>Pendidikan Terakhir</Label>
                              <Select>
-                                <SelectTrigger><SelectValue placeholder="--Pilih Pendidikan Terakhir--" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="-Pilih Pendidikan Terakhir-" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="sma">SMA/SMK</SelectItem>
                                     <SelectItem value="d3">D3</SelectItem>
                                     <SelectItem value="s1">S1</SelectItem>
-                                    <SelectItem value="s2">S2</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="birth-date">Tanggal Lahir</Label>
-                            {/* Mengganti Input dengan DatePicker */}
-                            <DatePicker />
+                            <Label>Tanggal Lahir</Label>
+                            <DatePicker date={undefined} onDateChange={() => {}} />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="branch">Cabang</Label>
-                            <Input id="branch" placeholder="Enter the cabang" />
+                            <Label>Cabang</Label>
+                            <Select onValueChange={(v) => handleSelectChange('branch', v)}>
+                                <SelectTrigger><SelectValue placeholder="Enter the cabang" /></SelectTrigger>
+                                <SelectContent>
+                                     <SelectItem value="Jakarta">Jakarta</SelectItem>
+                                     <SelectItem value="Bandung">Bandung</SelectItem>
+                                     <SelectItem value="Surabaya">Surabaya</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="grade">Grade</Label>
-                            <Input id="grade" placeholder="Masukan Grade" />
+                            <Label>Grade</Label>
+                            <Select>
+                                <SelectTrigger><SelectValue placeholder="Masukan Grade Anda" /></SelectTrigger>
+                                <SelectContent>
+                                     <SelectItem value="Junior">Junior</SelectItem>
+                                     <SelectItem value="Senior">Senior</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="account-number">Nomor Rekening</Label>
-                            <Input id="account-number" placeholder="Masukan Nomor Rekening" />
+                            <Label htmlFor="accountNumber">Nomor Rekening</Label>
+                            <Input id="accountNumber" placeholder="Masukan Nomor Rekening" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="sp-type">Tipe SP</Label>
+                            <Label>Tipe SP</Label>
                              <Select>
-                                <SelectTrigger><SelectValue placeholder="--Pilih SP--" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="-Pilih SP-" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="sp1">SP 1</SelectItem>
                                     <SelectItem value="sp2">SP 2</SelectItem>
-                                    <SelectItem value="sp3">SP 3</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline">Reject</Button>
-                    <Button>Approve</Button>
+                <DialogFooter className="mt-4">
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSubmit}>Save</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

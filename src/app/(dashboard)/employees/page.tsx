@@ -1,5 +1,6 @@
 'use client'; // Jadikan client component untuk menangani state dan event
 
+import { useState } from 'react'; // Import useState
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListFilter, FileDown } from "lucide-react";
@@ -12,12 +13,91 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-// --- DATA SIMULASI KARYAWAN  ---
-const employees = [
-    { id: 1, name: "John Doe", gender: "Laki - Laki", phone: "08123456789", branch: "Jakarta", position: "Developer", status: "Active" },
-    { id: 2, name: "Jane Smith", gender: "Perempuan", phone: "08123456789", branch: "Bandung", position: "Designer", status: "Active" },
-    { id: 3, name: "Michael Johnson", gender: "Laki - Laki", phone: "08123456789", branch: "Surabaya", position: "Manager", status: "Inactive" },
-    { id: 4, name: "Emily Davis", gender: "Perempuan", phone: "08123456789", branch: "Jakarta", position: "QA", status: "Active" },
+// Tipe data untuk Karyawan
+export interface Employee {
+    lastName: string | number | readonly string[] | undefined;
+    spType: string | undefined;
+    nik: string;
+    birthDate: any;
+    education: string;
+    contractType: string;
+    grade: string;
+    dateHired: any;
+    bank: string;
+    accountNumber: string;
+    accountHolder: string;
+    id: number;
+    name: string;
+    gender: "Laki - Laki" | "Perempuan";
+    phone: string;
+    branch: string;
+    position: string;
+    status: "Active" | "Inactive";
+    // Tambahkan properti lain sesuai form Anda
+    companyName?: string;
+    mobileNumber?: string;
+    birthPlace?: string;
+    // ... dan seterusnya
+}
+
+// Data awal (fiktif)
+const initialEmployees: Employee[] = [
+    {
+        id: 1, name: "John Doe", gender: "Laki - Laki", phone: "08123456789", branch: "Jakarta", position: "Developer", status: "Active",
+        nik: '',
+        birthDate: undefined,
+        education: '',
+        contractType: '',
+        grade: '',
+        dateHired: undefined,
+        bank: '',
+        accountNumber: '',
+        accountHolder: '',
+        lastName: undefined,
+        spType: undefined
+    },
+    {
+        id: 2, name: "Jane Smith", gender: "Perempuan", phone: "08123456789", branch: "Bandung", position: "Designer", status: "Active",
+        nik: '',
+        birthDate: undefined,
+        education: '',
+        contractType: '',
+        grade: '',
+        dateHired: undefined,
+        bank: '',
+        accountNumber: '',
+        accountHolder: '',
+        lastName: undefined,
+        spType: undefined
+    },
+    {
+        id: 3, name: "Michael Johnson", gender: "Laki - Laki", phone: "08123456789", branch: "Surabaya", position: "Manager", status: "Inactive",
+        nik: '',
+        birthDate: undefined,
+        education: '',
+        contractType: '',
+        grade: '',
+        dateHired: undefined,
+        bank: '',
+        accountNumber: '',
+        accountHolder: '',
+        lastName: undefined,
+        spType: undefined
+    },
+    {
+        id: 4, name: "Emily Davis", gender: "Perempuan", phone: "08123456789", branch: "Jakarta", position: "QA", status: "Active",
+        nik: '',
+        birthDate: undefined,
+        education: '',
+        contractType: '',
+        grade: '',
+        dateHired: undefined,
+        bank: '',
+        accountNumber: '',
+        accountHolder: '',
+        lastName: undefined,
+        spType: undefined
+    },
 ];
 
 
@@ -49,6 +129,24 @@ const FilterDialog = () => {
 
 
 export default function EmployeePage() {
+    // 1. Pindahkan data ke dalam state
+    const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+
+    // 2. Buat fungsi-fungsi CRUD
+    const handleAddEmployee = (newEmployeeData: Omit<Employee, 'id'>) => {
+        const newEmployee = { id: Date.now(), ...newEmployeeData };
+        setEmployees(prev => [...prev, newEmployee]);
+    };
+
+    const handleUpdateEmployee = (updatedEmployee: Employee) => {
+        setEmployees(prev => prev.map(emp => emp.id === updatedEmployee.id ? updatedEmployee : emp));
+    };
+
+    const handleDeleteEmployee = (employeeId: number) => {
+        setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+    };
+
+
     const handleDownloadPDF = () => {
         const doc = new jsPDF();
         doc.text("All Employee Information Report", 14, 16);
@@ -76,19 +174,23 @@ export default function EmployeePage() {
                         <CardTitle>All Employee Information</CardTitle>
                         <CardDescription>Manage and view all employee data.</CardDescription>
                     </div>
-                    {/* HANYA ADA SATU SET TOMBOL DI SINI */}
                     <div className="flex items-center gap-2">
                         <FilterDialog />
                         <Button variant="outline" size="sm" className="gap-1" onClick={handleDownloadPDF}>
                             <FileDown className="h-4 w-4" />
                             <span className="hidden sm:inline">Download</span>
                         </Button>
-                        <AddEmployeeDialog />
+                        {/* 3. Kirim fungsi 'handleAddEmployee' ke dialog */}
+                        <AddEmployeeDialog onAddEmployee={handleAddEmployee} />
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {/* Kirim data karyawan ke tabel melalui props */}
-                    <EmployeeTable employees={employees} />
+                    {/* 4. Kirim data dan fungsi-fungsi lain ke tabel */}
+                    <EmployeeTable 
+                        employees={employees}
+                        onUpdateEmployee={handleUpdateEmployee}
+                        onDeleteEmployee={handleDeleteEmployee}
+                    />
                 </CardContent>
             </Card>
         </div>

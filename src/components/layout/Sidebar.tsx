@@ -5,20 +5,21 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Home, Users, Clock, Calendar, FileText, Settings, LifeBuoy } from "lucide-react"
+import { Home, Users, Clock, Calendar, FileText, Settings, LifeBuoy, Building2 } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 
 const navItems = [
-    { href: "/dashboard", icon: Home, label: "DASHBOARD", roles: ['admin', 'user'] },
-    { href: "/employees", icon: Users, label: "EMPLOYEE", roles: ['admin'] },
-    { href: "/check-clock", icon: Clock, label: "CHECKCLOCK", roles: ['admin'] },
+    { href: "/dashboard", icon: Home, label: "DASHBOARD", roles: ['admin', 'user', 'superadmin'] },
+    { href: "/employees", icon: Users, label: "EMPLOYEE", roles: ['admin', 'superadmin'] },
+    { href: "/check-clock", icon: Clock, label: "CHECKCLOCK", roles: ['admin', 'superadmin'] },
     { href: "/attendance", icon: Calendar, label: "ATTENDANCE", roles: ['user'] },
-    { href: "/reports", icon: FileText, label: "REPORTS", roles: ['admin'] },
+    { href: "/reports", icon: FileText, label: "REPORTS", roles: ['admin', 'superadmin'] },
+    { href: "/company-settings", icon: Building2, label: "COMPANY SETTINGS", roles: ['superadmin'] },
 ];
 
 const bottomNavItems = [
-    { href: "/contact-service", icon: LifeBuoy, label: "CONTACT SERVICE", roles: ['admin', 'user'] },
-    { href: "/settings", icon: Settings, label: "SETTINGS", roles: ['admin', 'user'] },
+    { href: "/contact-service", icon: LifeBuoy, label: "CONTACT SERVICE", roles: ['admin', 'user', 'superadmin'] },
+    { href: "/settings", icon: Settings, label: "SETTINGS", roles: ['admin', 'user', 'superadmin'] },
 ];
 
 export default function Sidebar({ isOpen }: { isOpen: boolean }) {
@@ -33,7 +34,7 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
         
         const linkClasses = cn(
             "flex items-center gap-4 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-            "hover:bg-blue-900/50 hover:text-white", // Efek hover
+            "hover:bg-blue-900/50 hover:text-white", 
             isActive ? "bg-blue-900/60 text-white" : "text-black" 
         );
 
