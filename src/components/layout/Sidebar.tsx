@@ -5,7 +5,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Home, Users, Clock, Calendar, FileText, Settings, LifeBuoy, Building2 } from "lucide-react"
+import { Home, Users, Clock, Calendar, FileText, Settings, LifeBuoy, Building2, Plane } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
     { href: "/check-clock", icon: Clock, label: "CHECKCLOCK", roles: ['admin', 'superadmin'] },
     { href: "/attendance", icon: Calendar, label: "ATTENDANCE", roles: ['user'] },
     { href: "/reports", icon: FileText, label: "REPORTS", roles: ['admin', 'superadmin'] },
+    { href: "/leave", icon: Plane, label: "LEAVE MANAGEMENT", roles: ['admin', 'superadmin'] },
     { href: "/company-settings", icon: Building2, label: "COMPANY SETTINGS", roles: ['superadmin'] },
 ];
 
