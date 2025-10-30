@@ -9,7 +9,7 @@ const initialData = {
     cabang: [{ id: 1, name: "Jakarta Head Office" }, { id: 2, name: "Surabaya Branch" }],
     grade: [{ id: 1, name: "Junior" }, { id: 2, name: "Senior" }],
     tipeSp: [{ id: 1, name: "SP-1" }, { id: 2, name: "SP-2" }],
-    gender: [{ id: 1, name: "Male" }, { id: 2, name: "Female" }],
+    leave: [{ id: 1, name: "Annual Leave" }, { id: 2, name: "Sick Leave" }],
 };
 
 export default function CompanySettingsPage() {
@@ -21,17 +21,17 @@ export default function CompanySettingsPage() {
                     <CardDescription>
                         Manage master data used across the application, such as job positions, branches, and contract types.
                     </CardDescription>
-                </CardHeader>
+                </CardHeader>   
             </Card>
 
             <Tabs defaultValue="jabatan" className="w-full">
                 <TabsList className="grid w-full grid-cols-6">
-                    <TabsTrigger value="jabatan">Jabatan</TabsTrigger>
-                    <TabsTrigger value="tipeKontrak">Tipe Kontrak</TabsTrigger>
-                    <TabsTrigger value="cabang">Cabang</TabsTrigger>
+                    <TabsTrigger value="jabatan">Position</TabsTrigger>
+                    <TabsTrigger value="tipeKontrak">Contract Type</TabsTrigger>
+                    <TabsTrigger value="cabang">Branch</TabsTrigger>
                     <TabsTrigger value="grade">Grade</TabsTrigger>
-                    <TabsTrigger value="tipeSp">Tipe SP</TabsTrigger>
-                    <TabsTrigger value="gender">Gender</TabsTrigger>
+                    <TabsTrigger value="tipeSp">SP Type</TabsTrigger>
+                    <TabsTrigger value="leave">Leave</TabsTrigger>
                 </TabsList>
                 <TabsContent value="jabatan">
                     <CrudManager title="Jabatan (Positions)" description="Manage job positions in your company." initialData={initialData.jabatan} />
@@ -48,8 +48,8 @@ export default function CompanySettingsPage() {
                 <TabsContent value="tipeSp">
                      <CrudManager title="Tipe SP (Disciplinary Warning Types)" description="Manage types of disciplinary warnings." initialData={initialData.tipeSp} />
                 </TabsContent>
-                 <TabsContent value="gender">
-                     <CrudManager title="Gender" description="Manage gender options." initialData={initialData.gender} />
+                 <TabsContent value="leave">
+                     <CrudManager title="Leave" description="Manage leave types." initialData={initialData.leave} />
                 </TabsContent>
             </Tabs>
         </div>
