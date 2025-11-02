@@ -13,6 +13,6 @@ export default function DashboardPage() {
   }
 
   // Tampilkan dashboard berdasarkan peran (role) dari user yang sedang login
-  return user.role === 'admin' ? <AdminDashboard /> : <UserDashboard />;
+  return user.role === 'admin' || user.role === 'superadmin' ? <AdminDashboard /> : <UserDashboard />;
 }
 
