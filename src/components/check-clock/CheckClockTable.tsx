@@ -24,7 +24,7 @@ import { AttendanceRecord } from '@/app/(dashboard)/check-clock/page';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 
-// Tambah Absensi 
+// Add Absen
 const AddCheckClockDialog = ({ onAddRecord }: { onAddRecord: (record: Omit<AttendanceRecord, 'id'>) => void }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [employeeName, setEmployeeName] = useState('');

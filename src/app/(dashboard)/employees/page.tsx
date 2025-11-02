@@ -1,6 +1,6 @@
-'use client'; // Jadikan client component untuk menangani state dan event
+'use client'; 
 
-import { useState } from 'react'; // Import useState
+import { useState } from 'react'; 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListFilter, FileDown } from "lucide-react";
@@ -33,11 +33,9 @@ export interface Employee {
     branch: string;
     position: string;
     status: "Active" | "Inactive";
-    // Tambahkan properti lain sesuai form Anda
     companyName?: string;
     mobileNumber?: string;
     birthPlace?: string;
-    // ... dan seterusnya
 }
 
 // Data awal (fiktif)
