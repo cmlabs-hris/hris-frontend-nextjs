@@ -12,16 +12,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { UserOptions } from 'jspdf-autotable';
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: UserOptions) => jsPDF;
-  }
-}
 
 // Tipe data untuk Karyawan
 export interface Employee {
-    lastName: string | undefined;
+    lastName: string | number | readonly string[] | undefined;
     spType: string | undefined;
     nik: string;
     birthDate: any;
