@@ -12,7 +12,7 @@ export default function ContactServicePage() {
                 <CardHeader>
                     <CardTitle>Contact Information</CardTitle>
                     <CardDescription>
-                        Reach out to us through any of the following channels. We're here to help!
+                        Reach out to us through any of the following channels. We&apos;re here to help!
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
