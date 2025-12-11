@@ -2,180 +2,170 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
-import { FileDown, ListFilter } from 'lucide-react';
-import AddPayrollDialog from '@/components/payroll/AddPayrollDialog';
-import PayrollTable from '@/components/payroll/PayrollTable';
-// 1. Import komponen yang diperlukan untuk Filter
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import jsPDF from 'jspdf'; // Import jsPDF
-import autoTable from 'jspdf-autotable'; // Import autoTable
-import { format } from "date-fns"; // Import format
+import { Search, Plus, Loader2 } from 'lucide-react';
+import PayrollTable from '@/components/payroll/PayrollTable';
+import { payrollApi } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
-// Tipe data untuk Payroll
-export interface PayrollRecord {
-    id: number;
-    employeeName: string;
-    position: string;
-    basicSalary: number;
-    allowance: number;
-    deductions: number;
-    netPay: number;
-    status: "Pending" | "Paid";
-    payDate: Date;
-}
+// Generate Payroll Dialog
+function GeneratePayrollDialog({ onSuccess }: { onSuccess: () => void }) {
+    const [open, setOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [month, setMonth] = useState(new Date().getMonth() + 1);
+    const [year, setYear] = useState(new Date().getFullYear());
+    const { toast } = useToast();
 
-// Data awal (fiktif)
-const initialPayrollData: PayrollRecord[] = [
-    { id: 1, employeeName: "John Doe", position: "Developer", basicSalary: 10000000, allowance: 1000000, deductions: 500000, netPay: 10500000, status: "Paid", payDate: new Date("2025-10-25") },
-    { id: 2, employeeName: "Jane Smith", position: "Designer", basicSalary: 8000000, allowance: 500000, deductions: 250000, netPay: 8250000, status: "Paid", payDate: new Date("2025-10-25") },
-    { id: 3, employeeName: "Michael Johnson", position: "Manager", basicSalary: 15000000, allowance: 2500000, deductions: 1000000, netPay: 16500000, status: "Pending", payDate: new Date("2025-11-25") },
-];
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
+    const months = [
+        { value: 1, label: 'January' },
+        { value: 2, label: 'February' },
+        { value: 3, label: 'March' },
+        { value: 4, label: 'April' },
+        { value: 5, label: 'May' },
+        { value: 6, label: 'June' },
+        { value: 7, label: 'July' },
+        { value: 8, label: 'August' },
+        { value: 9, label: 'September' },
+        { value: 10, label: 'October' },
+        { value: 11, label: 'November' },
+        { value: 12, label: 'December' },
+    ];
 
-// Helper untuk format mata uang (jika belum ada)
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
-};
+    const handleGenerate = async () => {
+        try {
+            setIsLoading(true);
+            const response = await payrollApi.generate({
+                period_month: month,
+                period_year: year,
+            });
 
-
-// 2. Buat komponen FilterDialog
-const FilterDialog = ({ onApplyFilter }: { onApplyFilter: (filters: any) => void }) => {
-    const [employeeName, setEmployeeName] = useState('');
-    const [status, setStatus] = useState('');
-
-    const handleApply = () => {
-        onApplyFilter({ employeeName, status });
+            if (response.success) {
+                toast({
+                    title: "Success",
+                    description: `Payroll generated for ${months[month - 1].label} ${year}`,
+                });
+                setOpen(false);
+                onSuccess();
+            } else {
+                throw new Error(response.message || 'Failed to generate payroll');
+            }
+        } catch (error) {
+            console.error('Failed to generate payroll:', error);
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to generate payroll",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                    <ListFilter className="h-4 w-4" />
-                    <span className="hidden sm:inline">Filter</span>
+                <Button className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Generate Payroll
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Filter Payroll</DialogTitle>
-                    <DialogDescription>Filter payroll records based on criteria below.</DialogDescription>
+                    <DialogTitle>Generate Payroll</DialogTitle>
+                    <DialogDescription>
+                        Generate payroll records for all employees for the selected period.
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="employeeName">Employee Name</Label>
-                        <Input id="employeeName" value={employeeName} onChange={(e) => setEmployeeName(e.target.value)} placeholder="Filter by name..." />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Month</Label>
+                            <Select onValueChange={(v) => setMonth(parseInt(v))} value={String(month)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select month" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {months.map((m) => (
+                                        <SelectItem key={m.value} value={String(m.value)}>
+                                            {m.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Year</Label>
+                            <Select onValueChange={(v) => setYear(parseInt(v))} value={String(year)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {years.map((y) => (
+                                        <SelectItem key={y} value={String(y)}>
+                                            {y}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label>Status</Label>
-                        <Select value={status} onValueChange={setStatus}>
-                            <SelectTrigger><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="Pending">Pending</SelectItem>
-                                <SelectItem value="Paid">Paid</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        This will calculate payroll for all active employees based on their attendance records, 
+                        base salary, and assigned payroll components for the selected period.
+                    </p>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleApply}>Apply Filter</Button>
+                    <Button variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
+                        Cancel
+                    </Button>
+                    <Button onClick={handleGenerate} disabled={isLoading}>
+                        {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        Generate
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 }
 
-
 export default function PayrollPage() {
-    const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>(initialPayrollData);
-    // 3. Tambahkan state untuk data yang difilter
-    const [filteredRecords, setFilteredRecords] = useState<PayrollRecord[]>(initialPayrollData);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    const handleAddPayroll = (newRecord: Omit<PayrollRecord, 'id' | 'netPay'>) => {
-        const netPay = newRecord.basicSalary + newRecord.allowance - newRecord.deductions;
-        const newPayroll = { 
-            id: Date.now(), 
-            ...newRecord,
-            netPay,
-        };
-        setPayrollRecords(prev => [newPayroll, ...prev]);
-        setFilteredRecords(prev => [newPayroll, ...prev]); // Update data terfilter juga
-    };
-
-    const handleUpdatePayroll = (updatedRecord: PayrollRecord) => {
-        const netPay = updatedRecord.basicSalary + updatedRecord.allowance - updatedRecord.deductions;
-        const finalRecord = { ...updatedRecord, netPay };
-        const updatedList = payrollRecords.map(rec => rec.id === finalRecord.id ? finalRecord : rec);
-        setPayrollRecords(updatedList);
-        setFilteredRecords(updatedList); // Update data terfilter juga
-    };
-
-    const handleDeletePayroll = (recordId: number) => {
-        const updatedList = payrollRecords.filter(rec => rec.id !== recordId);
-        setPayrollRecords(updatedList);
-        setFilteredRecords(updatedList); // Update data terfilter juga
-    };
-
-    // 4. Buat fungsi Download PDF
-    const handleDownloadPDF = () => {
-        const doc = new jsPDF();
-        doc.text("Payroll Report", 14, 16);
-        const tableColumn = ["Employee Name", "Position", "Net Pay", "Status", "Pay Date"];
-        const tableRows: any[][] = [];
-
-        // Gunakan data yang sudah difilter
-        filteredRecords.forEach((record) => {
-            const recordData = [
-                record.employeeName,
-                record.position,
-                formatCurrency(record.netPay),
-                record.status,
-                format(record.payDate, "PPP"),
-            ];
-            tableRows.push(recordData);
-        });
-        autoTable(doc, { head: [tableColumn], body: tableRows, startY: 20 });
-        doc.save("payroll_report.pdf");
-     };
-
-     // 5. Buat fungsi Apply Filter
-     const handleApplyFilter = (filters: { employeeName: string, status: string }) => {
-        let data = [...payrollRecords];
-        if (filters.employeeName) {
-            data = data.filter(item => item.employeeName.toLowerCase().includes(filters.employeeName.toLowerCase()));
-        }
-        if (filters.status && filters.status !== 'all') {
-            data = data.filter(item => item.status === filters.status);
-        }
-        setFilteredRecords(data);
+    const handlePayrollGenerated = () => {
+        setRefreshKey(prev => prev + 1);
     };
 
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Payroll Management</CardTitle>
-                    <CardDescription>View, manage, and process employee payroll.</CardDescription>
-                </div>
-                 <div className="flex items-center gap-2">
-                    {/* 6. Hubungkan komponen dan fungsi */}
-                    <FilterDialog onApplyFilter={handleApplyFilter} />
-                    <Button variant="outline" size="sm" className="gap-1" onClick={handleDownloadPDF}>
-                        <FileDown className="h-4 w-4" />
-                        <span className="hidden sm:inline">Download</span>
-                    </Button>
-                    <AddPayrollDialog onAddPayroll={handleAddPayroll} />
+            <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <CardTitle>Payroll Management</CardTitle>
+                        <CardDescription>View and manage employee payroll records.</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="relative w-full sm:w-72">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search employee..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9"
+                            />
+                        </div>
+                        <GeneratePayrollDialog onSuccess={handlePayrollGenerated} />
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
-                <PayrollTable
-                    records={filteredRecords} // Kirim data terfilter ke tabel
-                    onUpdatePayroll={handleUpdatePayroll}
-                    onDeletePayroll={handleDeletePayroll}
-                />
+                <PayrollTable key={refreshKey} searchQuery={searchQuery} />
             </CardContent>
         </Card>
     );

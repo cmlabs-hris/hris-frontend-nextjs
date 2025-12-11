@@ -1,17 +1,16 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { format } from "date-fns"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, CheckCircle2, Eye, PlusCircle, FileDown, ListFilter, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, CheckCircle2, Eye, FileDown, ListFilter, MoreHorizontal, Trash2, XCircle, Loader2 } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -20,209 +19,642 @@ import { cn } from "@/lib/utils"
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DateRange } from "react-day-picker"
-import { AttendanceRecord } from '@/app/(dashboard)/check-clock/page'; 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { attendanceApi, Attendance, AttendanceFilter } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
+// Extended Attendance with employee details
+export interface AttendanceWithEmployee extends Attendance {
+    employee_name?: string;
+    employee_code?: string;
+    position_name?: string;
+    branch_name?: string;
+    work_hours_in_minutes?: number;
+    clock_in_photo?: string;
+    clock_out_photo?: string;
+}
 
-// Add Absen
-const AddCheckClockDialog = ({ onAddRecord }: { onAddRecord: (record: Omit<AttendanceRecord, 'id'>) => void }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [employeeName, setEmployeeName] = useState('');
-    
-    const handleSubmit = () => {
-        if (!employeeName) return alert('Employee name is required.');
-        
-        const newRecord: Omit<AttendanceRecord, 'id'> = {
-            employeeName,
-            jabatan: "Staff", // Data fiktif
-            clockIn: "09:00",
-            clockOut: "17:00",
-            workHours: 8,
-            approve: "Pusat",
-            status: "Waiting",
-            statusApprove: "Waiting",
-            date: new Date(),
-        };
-        onAddRecord(newRecord);
-        setIsOpen(false);
-        setEmployeeName('');
+// View Attendance Sheet with Approve/Reject
+const ViewAttendanceSheet = ({ 
+    record, 
+    onApprove, 
+    onReject,
+    isApproving,
+    isRejecting 
+}: { 
+    record: AttendanceWithEmployee;
+    onApprove: (id: string) => void;
+    onReject: (id: string) => void;
+    isApproving: boolean;
+    isRejecting: boolean;
+}) => {
+    const formatTime = (timeStr?: string) => {
+        if (!timeStr) return '-';
+        return timeStr.substring(0, 5);
+    };
+
+    const formatWorkHours = (minutes?: number) => {
+        if (!minutes) return '-';
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${hours}h ${mins}m`;
+    };
+
+    const getStatusBadge = (status: string) => {
+        switch (status) {
+            case 'present':
+            case 'on_time':
+                return <Badge className="bg-green-500">On Time</Badge>;
+            case 'late':
+                return <Badge className="bg-red-500">Late</Badge>;
+            case 'waiting_approval':
+                return <Badge className="bg-yellow-400 text-yellow-900">Waiting Approval</Badge>;
+            case 'absent':
+                return <Badge className="bg-gray-500">Absent</Badge>;
+            default:
+                return <Badge variant="secondary">{status}</Badge>;
+        }
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild><Button size="sm" className="gap-1"><PlusCircle className="h-4 w-4" /><span>Add</span></Button></DialogTrigger>
-            <DialogContent><DialogHeader><DialogTitle>Add Check Clock</DialogTitle></DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2"><Label htmlFor="employeeName">Employee Name</Label><Input id="employeeName" value={employeeName} onChange={(e) => setEmployeeName(e.target.value)} /></div>
+        <Sheet>
+            <SheetTrigger asChild>
+                <Button variant="outline" size="sm">View</Button>
+            </SheetTrigger>
+            <SheetContent className="w-[400px] sm:w-[540px]">
+                <SheetHeader>
+                    <SheetTitle>Attendance Details</SheetTitle>
+                    <SheetDescription>
+                        Detailed attendance information for {record.employee_name || 'Employee'}.
+                    </SheetDescription>
+                </SheetHeader>
+                <div className="space-y-6 py-4">
+                    <div className="flex items-center gap-4 p-4 border rounded-lg">
+                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                            <span className="text-lg font-semibold text-gray-600">
+                                {record.employee_name?.charAt(0) || 'E'}
+                            </span>
+                        </div>
+                        <div>
+                            <p className="font-semibold">{record.employee_name || 'Unknown Employee'}</p>
+                            <p className="text-sm text-gray-500">{record.position_name || 'No Position'}</p>
+                            <p className="text-xs text-gray-400">{record.employee_code}</p>
+                        </div>
+                        {getStatusBadge(record.status)}
+                    </div>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Attendance Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Date:</span>
+                                <span>{record.date ? format(new Date(record.date), "PPP") : '-'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Check In:</span>
+                                <span>{formatTime(record.clock_in)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Check Out:</span>
+                                <span>{formatTime(record.clock_out)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Work Hours:</span>
+                                <span>{formatWorkHours(record.work_hours_in_minutes)}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Location Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Branch:</span>
+                                <span>{record.branch_name || '-'}</span>
+                            </div>
+                            {record.clock_in_latitude && record.clock_in_longitude && (
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Clock In Location:</span>
+                                    <span className="text-xs">{record.clock_in_latitude.toFixed(6)}, {record.clock_in_longitude.toFixed(6)}</span>
+                                </div>
+                            )}
+                            {record.clock_out_latitude && record.clock_out_longitude && (
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Clock Out Location:</span>
+                                    <span className="text-xs">{record.clock_out_latitude.toFixed(6)}, {record.clock_out_longitude.toFixed(6)}</span>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {record.notes && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Notes</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-gray-600">{record.notes}</p>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
-            <DialogFooter><Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button><Button onClick={handleSubmit}>Save</Button></DialogFooter></DialogContent>
-        </Dialog>
+                
+                {record.status === 'waiting_approval' && (
+                    <SheetFooter className="flex gap-2 mt-4">
+                        <Button 
+                            variant="destructive" 
+                            onClick={() => onReject(record.id)}
+                            disabled={isRejecting || isApproving}
+                            className="flex-1"
+                        >
+                            {isRejecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
+                            Reject
+                        </Button>
+                        <Button 
+                            onClick={() => onApprove(record.id)}
+                            disabled={isApproving || isRejecting}
+                            className="flex-1"
+                        >
+                            {isApproving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                            Approve
+                        </Button>
+                    </SheetFooter>
+                )}
+            </SheetContent>
+        </Sheet>
     );
 };
 
-// Dialog Edit Absensi (BARU)
-const EditCheckClockDialog = ({ record, onUpdateRecord, children }: { record: AttendanceRecord, onUpdateRecord: (rec: AttendanceRecord) => void, children: React.ReactNode }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [formData, setFormData] = useState(record);
+// Filter Dialog
+const FilterDialog = ({ onApplyFilter }: { onApplyFilter: (filters: { status: string; date: DateRange | undefined }) => void }) => {
+    const [status, setStatus] = useState('');
+    const [date, setDate] = React.useState<DateRange | undefined>();
     
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData(prev => ({...prev, [e.target.id]: e.target.value}));
+    const handleApply = () => {
+        onApplyFilter({ status, date });
     };
-    
-    const handleSubmit = () => {
-        onUpdateRecord(formData);
-        setIsOpen(false);
+
+    const handleReset = () => {
+        setStatus('');
+        setDate(undefined);
+        onApplyFilter({ status: '', date: undefined });
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <div onClick={() => setIsOpen(true)}>{children}</div>
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1">
+                    <ListFilter className="h-4 w-4" />
+                    <span>Filter</span>
+                </Button>
+            </DialogTrigger>
             <DialogContent>
-                <DialogHeader><DialogTitle>Edit Attendance for {record.employeeName}</DialogTitle></DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2"><Label htmlFor="clockIn">Clock In</Label><Input id="clockIn" value={formData.clockIn} onChange={handleChange} /></div>
-                    <div className="space-y-2"><Label htmlFor="clockOut">Clock Out</Label><Input id="clockOut" value={formData.clockOut} onChange={handleChange} /></div>
+                <DialogHeader>
+                    <DialogTitle>Filter Attendance</DialogTitle>
+                    <DialogDescription>Filter the attendance list based on criteria below.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="status">Status</Label>
+                        <Select onValueChange={setStatus} value={status}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="All Statuses" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="waiting_approval">Waiting Approval</SelectItem>
+                                <SelectItem value="on_time">On Time</SelectItem>
+                                <SelectItem value="present">Present</SelectItem>
+                                <SelectItem value="late">Late</SelectItem>
+                                <SelectItem value="absent">Absent</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Date Range</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    id="date"
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !date && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date?.from ? (
+                                        date.to ? (
+                                            <>
+                                                {format(date.from, "LLL dd, y")} - {format(date.to, "LLL dd, y")}
+                                            </>
+                                        ) : (
+                                            format(date.from, "LLL dd, y")
+                                        )
+                                    ) : (
+                                        <span>Pick a date range</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={date?.from}
+                                    selected={date}
+                                    onSelect={setDate}
+                                    numberOfMonths={2}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                 </div>
-                <DialogFooter><Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button><Button onClick={handleSubmit}>Save Changes</Button></DialogFooter>
+                <DialogFooter className="gap-2">
+                    <Button variant="outline" onClick={handleReset}>Reset</Button>
+                    <Button onClick={handleApply}>Apply Filter</Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 };
 
-
-// ... (Komponen ViewAttendanceSheet dan FilterDialog)
-const ViewAttendanceSheet = ({ record }: { record: AttendanceRecord }) => ( <Sheet><SheetTrigger asChild><Button variant="outline" size="sm">View</Button></SheetTrigger><SheetContent className="w-[400px] sm:w-[540px]"><SheetHeader><SheetTitle>Approve Attendance</SheetTitle><SheetDescription>Detailed attendance information for {record.employeeName}.</SheetDescription></SheetHeader><div className="space-y-6 py-4"><div className="flex items-center gap-4 p-4 border rounded-lg"><div className="w-12 h-12 bg-gray-200 rounded-full" /><div><p className="font-semibold">{record.employeeName}</p><p className="text-sm text-gray-500">{record.jabatan}</p></div><Badge variant={record.statusApprove === 'Approved' ? 'default' : 'secondary'} className="ml-auto">{record.statusApprove}</Badge></div><Card><CardHeader><CardTitle>Attendance Information</CardTitle></CardHeader><CardContent className="space-y-2"><div className="flex justify-between"><span>Date:</span> <span>{format(record.date, "PPP")}</span></div><div className="flex justify-between"><span>Check In:</span> <span>{record.clockIn}</span></div><div className="flex justify-between"><span>Check Out:</span> <span>{record.clockOut}</span></div><div className="flex justify-between"><span>Work Hours:</span> <span>{record.workHours}</span></div></CardContent></Card><Card><CardHeader><CardTitle>Location Information</CardTitle></CardHeader><CardContent className="space-y-2"><div className="flex justify-between"><span>Location:</span> <span>Kantor Pusat</span></div><div className="flex justify-between"><span>Address:</span> <span>Jl. Veteran No.1, Kota Malang</span></div></CardContent></Card><Card><CardHeader><CardTitle>Proof of Attendance</CardTitle></CardHeader><CardContent className="flex items-center justify-between"><p>Proof of Attendance.JPEG</p><div className="flex gap-2"><Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button><Button variant="ghost" size="icon"><FileDown className="h-4 w-4" /></Button></div></CardContent></Card></div></SheetContent></Sheet>);
-const FilterDialog = ({ onApplyFilter }: { onApplyFilter: (filters: any) => void }) => {
-    const [name, setName] = useState(''); const [status, setStatus] = useState(''); const [date, setDate] = React.useState<DateRange | undefined>(); const handleApply = () => { onApplyFilter({ name, status, date }); };
-    return ( <Dialog><DialogTrigger asChild><Button variant="outline" size="sm" className="gap-1"><ListFilter className="h-4 w-4" /><span>Filter</span></Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Filter Attendance</DialogTitle><DialogDescription>Filter the attendance list based on criteria below.</DialogDescription></DialogHeader><div className="grid gap-4 py-4"><div className="space-y-2"><Label htmlFor="name">Employee Name</Label><Input id="name" placeholder="Filter by name..." value={name} onChange={(e) => setName(e.target.value)} /></div><div className="space-y-2"><Label htmlFor="status">Status</Label><Select onValueChange={setStatus} value={status}><SelectTrigger><SelectValue placeholder="All Statuses" /></SelectTrigger><SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="Waiting">Waiting</SelectItem><SelectItem value="OnTime">OnTime</SelectItem><SelectItem value="Late">Late</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Date Range</Label><Popover><PopoverTrigger asChild><Button id="date" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{date?.from ? (date.to ? (<> {format(date.from, "LLL dd, y")} - {format(date.to, "LLL dd, y")} </>) : (format(date.from, "LLL dd, y"))) : (<span>Pick a date range</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={date?.from} selected={date} onSelect={setDate} numberOfMonths={2}/></PopoverContent></Popover></div></div><DialogFooter><Button onClick={handleApply}>Apply Filter</Button></DialogFooter></DialogContent></Dialog> )
-};
-
-
-// --- Komponen Tabel Utama ---
+// --- Main Table Component ---
 
 interface CheckClockTableProps {
-    initialData: AttendanceRecord[];
-    onAddRecord: (record: Omit<AttendanceRecord, 'id'>) => void;
-    onUpdateRecord: (record: AttendanceRecord) => void;
-    onDeleteRecord: (id: number) => void;
+    searchQuery: string;
 }
 
-export default function CheckClockTable({ initialData, onAddRecord, onUpdateRecord, onDeleteRecord }: CheckClockTableProps) {
-    const [filteredData, setFilteredData] = useState(initialData);
+export default function CheckClockTable({ searchQuery }: CheckClockTableProps) {
+    const [attendanceData, setAttendanceData] = useState<AttendanceWithEmployee[]>([]);
+    const [filteredData, setFilteredData] = useState<AttendanceWithEmployee[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [approvingId, setApprovingId] = useState<string | null>(null);
+    const [rejectingId, setRejectingId] = useState<string | null>(null);
+    const [filters, setFilters] = useState<{ status: string; date: DateRange | undefined }>({ status: '', date: undefined });
+    const { toast } = useToast();
+
+    // Fetch attendance data
+    const fetchAttendance = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            const filter: AttendanceFilter = {};
+            
+            if (filters.status && filters.status !== 'all') {
+                filter.status = filters.status;
+            }
+            if (filters.date?.from) {
+                filter.start_date = format(filters.date.from, 'yyyy-MM-dd');
+            }
+            if (filters.date?.to) {
+                filter.end_date = format(filters.date.to, 'yyyy-MM-dd');
+            }
+
+            const response = await attendanceApi.list(filter);
+            if (response.success && response.data) {
+                setAttendanceData(response.data as AttendanceWithEmployee[]);
+            } else {
+                setAttendanceData([]);
+            }
+        } catch (error) {
+            console.error('Failed to fetch attendance:', error);
+            setAttendanceData([]);
+            toast({
+                title: "Error",
+                description: "Failed to fetch attendance data",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [filters, toast]);
 
     useEffect(() => {
-        setFilteredData(initialData);
-    }, [initialData]);
+        fetchAttendance();
+    }, [fetchAttendance]);
 
-    const handleApprove = (record: AttendanceRecord) => {
-        const updatedRecord = { ...record, status: "OnTime" as "OnTime", statusApprove: "Approved" as "Approved" };
-        onUpdateRecord(updatedRecord);
+    // Filter by search query (realtime)
+    useEffect(() => {
+        if (!attendanceData || !Array.isArray(attendanceData)) {
+            setFilteredData([]);
+            return;
+        }
+        
+        if (!searchQuery.trim()) {
+            setFilteredData(attendanceData);
+        } else {
+            const query = searchQuery.toLowerCase();
+            const filtered = attendanceData.filter(record => 
+                record.employee_name?.toLowerCase().includes(query) ||
+                record.employee_code?.toLowerCase().includes(query) ||
+                record.position_name?.toLowerCase().includes(query) ||
+                record.branch_name?.toLowerCase().includes(query)
+            );
+            setFilteredData(filtered);
+        }
+    }, [searchQuery, attendanceData]);
+
+    // Handle approve
+    const handleApprove = async (id: string) => {
+        try {
+            setApprovingId(id);
+            const response = await attendanceApi.approve(id);
+            if (response.success) {
+                toast({
+                    title: "Success",
+                    description: "Attendance approved successfully",
+                });
+                fetchAttendance();
+            } else {
+                throw new Error(response.message || 'Failed to approve');
+            }
+        } catch (error) {
+            console.error('Failed to approve:', error);
+            toast({
+                title: "Error",
+                description: "Failed to approve attendance",
+                variant: "destructive",
+            });
+        } finally {
+            setApprovingId(null);
+        }
     };
 
+    // Handle reject
+    const handleReject = async (id: string) => {
+        try {
+            setRejectingId(id);
+            const response = await attendanceApi.reject(id);
+            if (response.success) {
+                toast({
+                    title: "Success",
+                    description: "Attendance rejected successfully",
+                });
+                fetchAttendance();
+            } else {
+                throw new Error(response.message || 'Failed to reject');
+            }
+        } catch (error) {
+            console.error('Failed to reject:', error);
+            toast({
+                title: "Error",
+                description: "Failed to reject attendance",
+                variant: "destructive",
+            });
+        } finally {
+            setRejectingId(null);
+        }
+    };
+
+    // Handle delete
+    const handleDelete = async (id: string) => {
+        try {
+            const response = await attendanceApi.delete(id);
+            if (response.success) {
+                toast({
+                    title: "Success",
+                    description: "Attendance record deleted successfully",
+                });
+                fetchAttendance();
+            } else {
+                throw new Error(response.message || 'Failed to delete');
+            }
+        } catch (error) {
+            console.error('Failed to delete:', error);
+            toast({
+                title: "Error",
+                description: "Failed to delete attendance record",
+                variant: "destructive",
+            });
+        }
+    };
+
+    // Handle filter apply
+    const handleApplyFilter = (newFilters: { status: string; date: DateRange | undefined }) => {
+        setFilters(newFilters);
+    };
+
+    // Download PDF
     const handleDownloadPDF = () => {
         const doc = new jsPDF();
         doc.text("Check Clock Overview Report", 14, 16);
-        const tableColumn = ["Employee Name", "Jabatan", "Clock In", "Clock Out", "Work Hours", "Status"];
-        const tableRows: any[] = [];
+        doc.text(`Generated: ${format(new Date(), "PPP")}`, 14, 24);
+        
+        const tableColumn = ["Employee", "Position", "Date", "Clock In", "Clock Out", "Status"];
+        const tableRows: string[][] = [];
+        
         filteredData.forEach(record => {
-            tableRows.push([record.employeeName, record.jabatan, record.clockIn, record.clockOut, record.workHours.toString(), record.status]);
+            tableRows.push([
+                record.employee_name || '-',
+                record.position_name || '-',
+                record.date ? format(new Date(record.date), "yyyy-MM-dd") : '-',
+                record.clock_in?.substring(0, 5) || '-',
+                record.clock_out?.substring(0, 5) || '-',
+                record.status || '-'
+            ]);
         });
-        autoTable(doc, { head: [tableColumn], body: tableRows, startY: 20 });
+        
+        autoTable(doc, { head: [tableColumn], body: tableRows, startY: 30 });
         doc.save("check_clock_report.pdf");
     };
-    
-    const handleApplyFilter = (filters: { name: string, status: string, date: DateRange | undefined }) => {
-        let data = [...initialData];
-        if (filters.name) {
-            data = data.filter(item => item.employeeName.toLowerCase().includes(filters.name.toLowerCase()));
-        }
-        if (filters.status && filters.status !== 'all') {
-            data = data.filter(item => item.status === filters.status);
-        }
-        if (filters.date?.from) { data = data.filter(item => item.date >= filters.date!.from!); }
-        if (filters.date?.to) { data = data.filter(item => item.date <= filters.date!.to!); }
-        setFilteredData(data);
+
+    // Format time helper
+    const formatTime = (timeStr?: string) => {
+        if (!timeStr) return '-';
+        return timeStr.substring(0, 5);
     };
+
+    // Get status badge
+    const getStatusBadge = (status: string) => {
+        switch (status) {
+            case 'present':
+            case 'on_time':
+                return <Badge className="bg-green-500">On Time</Badge>;
+            case 'late':
+                return <Badge className="bg-red-500">Late</Badge>;
+            case 'waiting_approval':
+                return <Badge className="bg-yellow-400 text-yellow-900 cursor-pointer hover:bg-yellow-500">Waiting</Badge>;
+            case 'absent':
+                return <Badge className="bg-gray-500">Absent</Badge>;
+            default:
+                return <Badge variant="secondary">{status}</Badge>;
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Loading attendance data...</span>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">
-             <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2">
                 <FilterDialog onApplyFilter={handleApplyFilter} />
-                <Button variant="outline" size="sm" className="gap-1" onClick={handleDownloadPDF}><FileDown className="h-4 w-4" /><span>Download</span></Button>
-                <AddCheckClockDialog onAddRecord={onAddRecord} />
+                <Button variant="outline" size="sm" className="gap-1" onClick={handleDownloadPDF}>
+                    <FileDown className="h-4 w-4" />
+                    <span>Download</span>
+                </Button>
             </div>
+            
             <div className="rounded-md border">
                 <Table>
                     <TableHeader className="bg-slate-100 dark:bg-slate-800">
                         <TableRow>
-                            <TableHead>Employee Name</TableHead>
-                            <TableHead>Jabatan</TableHead>
-                            <TableHead>Clock in</TableHead>
-                            <TableHead>Clock out</TableHead>
+                            <TableHead>Employee</TableHead>
+                            <TableHead>Position</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Clock In</TableHead>
+                            <TableHead>Clock Out</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Details</TableHead>
                             <TableHead className="text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredData.map((record) => (
-                            <TableRow key={record.id}>
-                                <TableCell className="font-medium flex items-center gap-2">
-                                     {record.statusApprove === 'Approved' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                                     {record.employeeName}
-                                </TableCell>
-                                <TableCell>{record.jabatan}</TableCell>
-                                <TableCell>{record.clockIn}</TableCell>
-                                <TableCell>{record.clockOut}</TableCell>
-                                <TableCell>
-                                    {record.status === 'Waiting' ? (
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild><Badge className="cursor-pointer bg-yellow-400 hover:bg-yellow-500 text-yellow-900">Waiting</Badge></AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader><AlertDialogTitle>Approve Attendance</AlertDialogTitle><AlertDialogDescription>Are you sure you want to approve this attendance?</AlertDialogDescription></AlertDialogHeader>
-                                                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleApprove(record)}>Approve</AlertDialogAction></AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    ) : (
-                                        <Badge className={cn(record.status === 'OnTime' && 'bg-green-500', record.status === 'Late' && 'bg-red-500')}>{record.status}</Badge>
-                                    )}
-                                </TableCell>
-                                <TableCell><ViewAttendanceSheet record={record} /></TableCell>
-                                <TableCell className="text-center">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 p-0"><span className="sr-only">Open menu</span><MoreHorizontal className="h-4 w-4"/></Button></DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <EditCheckClockDialog record={record} onUpdateRecord={onUpdateRecord}>
-                                                <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent focus:bg-accent focus:text-accent-foreground">
-                                                    <Edit className="mr-2 h-4 w-4" /> Edit
-                                                </div>
-                                            </EditCheckClockDialog>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-red-500 outline-none transition-colors hover:bg-accent focus:bg-accent-foreground">
-                                                        <Trash2 className="mr-2 h-4 w-4"/> Delete
-                                                    </div>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader><AlertDialogTitle>Delete Record</AlertDialogTitle><AlertDialogDescription>This will permanently delete the attendance record.</AlertDialogDescription></AlertDialogHeader>
-                                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => onDeleteRecord(record.id)}>Delete</AlertDialogAction></AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                        {filteredData.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={8} className="text-center py-10 text-gray-500">
+                                    {searchQuery ? 'No matching records found' : 'No attendance records found'}
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            filteredData.map((record) => (
+                                <TableRow key={record.id}>
+                                    <TableCell className="font-medium">
+                                        <div className="flex items-center gap-2">
+                                            {record.status !== 'waiting_approval' && (
+                                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                            )}
+                                            <div>
+                                                <p>{record.employee_name || 'Unknown'}</p>
+                                                <p className="text-xs text-gray-400">{record.employee_code}</p>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{record.position_name || '-'}</TableCell>
+                                    <TableCell>{record.date ? format(new Date(record.date), "MMM dd, yyyy") : '-'}</TableCell>
+                                    <TableCell>{formatTime(record.clock_in)}</TableCell>
+                                    <TableCell>{formatTime(record.clock_out)}</TableCell>
+                                    <TableCell>
+                                        {record.status === 'waiting_approval' ? (
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    {getStatusBadge(record.status)}
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Approve or Reject Attendance</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            What would you like to do with this attendance record for {record.employee_name}?
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <Button 
+                                                            variant="destructive" 
+                                                            onClick={() => handleReject(record.id)}
+                                                            disabled={rejectingId === record.id}
+                                                        >
+                                                            {rejectingId === record.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
+                                                            Reject
+                                                        </Button>
+                                                        <Button 
+                                                            onClick={() => handleApprove(record.id)}
+                                                            disabled={approvingId === record.id}
+                                                        >
+                                                            {approvingId === record.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                                                            Approve
+                                                        </Button>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        ) : (
+                                            getStatusBadge(record.status)
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <ViewAttendanceSheet 
+                                            record={record}
+                                            onApprove={handleApprove}
+                                            onReject={handleReject}
+                                            isApproving={approvingId === record.id}
+                                            isRejecting={rejectingId === record.id}
+                                        />
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                                                    <span className="sr-only">Open menu</span>
+                                                    <MoreHorizontal className="h-4 w-4"/>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                {record.status === 'waiting_approval' && (
+                                                    <>
+                                                        <DropdownMenuItem onClick={() => handleApprove(record.id)}>
+                                                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
+                                                            Approve
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleReject(record.id)}>
+                                                            <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                                                            Reject
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-red-500 outline-none transition-colors hover:bg-accent focus:bg-accent-foreground">
+                                                            <Trash2 className="mr-2 h-4 w-4"/> Delete
+                                                        </div>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Delete Record</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This will permanently delete the attendance record for {record.employee_name}.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(record.id)}>
+                                                                Delete
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </div>
+            
             <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">Showing 1 to {filteredData.length} of {initialData.length} records</div>
+                <div className="text-sm text-muted-foreground">
+                    Showing {filteredData.length} of {attendanceData.length} records
+                </div>
                 <Pagination>
                     <PaginationContent>
-                        <PaginationItem><PaginationPrevious href="#" /></PaginationItem>
-                        <PaginationItem><PaginationLink href="#" isActive>1</PaginationLink></PaginationItem>
-                        <PaginationItem><PaginationNext href="#" /></PaginationItem>
+                        <PaginationItem>
+                            <PaginationPrevious href="#" />
+                        </PaginationItem>
+                        <PaginationItem>
+                            <PaginationLink href="#" isActive>1</PaginationLink>
+                        </PaginationItem>
+                        <PaginationItem>
+                            <PaginationNext href="#" />
+                        </PaginationItem>
                     </PaginationContent>
                 </Pagination>
             </div>

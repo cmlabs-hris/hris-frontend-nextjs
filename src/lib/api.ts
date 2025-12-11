@@ -243,54 +243,130 @@ export interface EmployeeFilter {
 export interface LeaveType {
   id: string;
   company_id: string;
-  code: string;
+  code?: string;
   name: string;
   description?: string;
+  color?: string;
+  is_active?: boolean;
+  requires_approval?: boolean;
+  has_quota?: boolean;
+  accrual_method?: string;
+  quota_calculation_type: string;
+  quota_rules: QuotaRules;
+}
+
+export interface QuotaRules {
+  type: string;
   default_quota: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  rules?: QuotaRule[];
+}
+
+export interface QuotaRule {
+  quota: number;
+  position_id?: string;
+  grade_id?: string;
+  employment_type?: string;
+  min_months?: number;
+  max_months?: number;
+  conditions?: {
+    min_tenure_months?: number;
+    max_tenure_months?: number;
+    position_id?: string;
+    grade_id?: string;
+    employment_type?: string;
+  };
 }
 
 export interface LeaveQuota {
   id: string;
   employee_id: string;
   leave_type_id: string;
+  leave_type_name?: string;
   year: number;
-  total_quota: number;
+  opening_balance: number;
+  earned_quota: number;
+  rollover_quota: number;
+  adjustment_quota: number;
   used_quota: number;
+  pending_quota: number;
   available_quota: number;
+  rollover_expiry_date?: string;
 }
 
 export interface LeaveRequest {
   id: string;
   employee_id: string;
+  employee_name: string;
   leave_type_id: string;
+  leave_type_name: string;
   start_date: string;
   end_date: string;
-  reason?: string;
-  status: 'waiting_approval' | 'approved' | 'rejected';
+  duration_type: string;
+  total_days: number;
+  working_days: number;
+  reason: string;
   attachment_url?: string;
+  status: 'waiting_approval' | 'approved' | 'rejected' | 'cancelled';
+  submitted_at: string;
   approved_by?: string;
   approved_at?: string;
   rejection_reason?: string;
-  created_at: string;
-  updated_at: string;
+}
+
+export interface LeaveRequestFilter {
+  employee_id?: string;
+  employee_name?: string;
+  leave_type_id?: string;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
+  page?: number;
+  limit?: number;
+  sort_by?: string;
+  sort_order?: string;
+}
+
+export interface ListLeaveRequestResponse {
+  total_count: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  showing: string;
+  requests: LeaveRequest[];
 }
 
 export interface CreateLeaveTypeRequest {
-  code: string;
   name: string;
+  code?: string;
   description?: string;
-  default_quota: number;
+  color?: string;
   is_active?: boolean;
+  requires_approval?: boolean;
+  requires_attachment?: boolean;
+  attachment_required_after_days?: number;
+  has_quota?: boolean;
+  accrual_method?: string;
+  deduction_type?: string;
+  allow_half_day?: boolean;
+  max_days_per_request?: number;
+  min_notice_days?: number;
+  max_advance_days?: number;
+  allow_backdate?: boolean;
+  backdate_max_days?: number;
+  allow_rollover?: boolean;
+  max_rollover_days?: number;
+  rollover_expiry_month?: number;
+  quota_calculation_type: string;
+  quota_rules: Record<string, unknown>;
 }
 
 export interface CreateLeaveRequestPayload {
+  employee_id: string;
   leave_type_id: string;
   start_date: string;
   end_date: string;
-  reason?: string;
+  duration_type: string; // 'full_day', 'half_day_morning', 'half_day_afternoon'
+  reason: string;
 }
 
 // ============================================
@@ -452,11 +528,21 @@ export interface Invitation {
 export interface PayrollSettings {
   id: string;
   company_id: string;
-  pay_period: string;
-  pay_day: number;
-  currency: string;
-  created_at: string;
-  updated_at: string;
+  late_deduction_enabled: boolean;
+  late_deduction_per_minute: string;
+  overtime_enabled: boolean;
+  overtime_pay_per_minute: string;
+  early_leave_deduction_enabled: boolean;
+  early_leave_deduction_per_minute: string;
+}
+
+export interface UpdatePayrollSettingsRequest {
+  late_deduction_enabled?: boolean;
+  late_deduction_per_minute?: string;
+  overtime_enabled?: boolean;
+  overtime_pay_per_minute?: string;
+  early_leave_deduction_enabled?: boolean;
+  early_leave_deduction_per_minute?: string;
 }
 
 export interface PayrollComponent {
@@ -464,25 +550,105 @@ export interface PayrollComponent {
   company_id: string;
   name: string;
   type: 'allowance' | 'deduction';
-  amount?: number;
-  is_percentage: boolean;
+  description?: string;
   is_taxable: boolean;
-  created_at: string;
-  updated_at: string;
+  is_active: boolean;
+}
+
+export interface CreatePayrollComponentRequest {
+  name: string;
+  type: 'allowance' | 'deduction';
+  description?: string;
+  is_taxable?: boolean;
+}
+
+export interface EmployeePayrollComponent {
+  id: string;
+  employee_id: string;
+  payroll_component_id: string;
+  component_name: string;
+  component_type: string;
+  amount: string;
+  effective_date: string;
+  end_date?: string;
+}
+
+export interface AssignComponentRequest {
+  payroll_component_id: string;
+  amount: string;
+  effective_date?: string;
+  end_date?: string;
 }
 
 export interface PayrollRecord {
   id: string;
   employee_id: string;
-  period_start: string;
-  period_end: string;
-  base_salary: number;
-  total_allowances: number;
-  total_deductions: number;
-  net_salary: number;
-  status: 'draft' | 'finalized' | 'paid';
-  created_at: string;
-  updated_at: string;
+  employee_name: string;
+  employee_code: string;
+  position_name?: string;
+  branch_name?: string;
+  period_month: number;
+  period_year: number;
+  base_salary: string;
+  total_allowances: string;
+  total_deductions: string;
+  allowances_detail?: Record<string, string>;
+  deductions_detail?: Record<string, string>;
+  total_work_days: number;
+  total_late_minutes: number;
+  late_deduction_amount: string;
+  total_early_leave_minutes: number;
+  early_leave_deduction_amount: string;
+  total_overtime_minutes: number;
+  overtime_amount: string;
+  gross_salary: string;
+  net_salary: string;
+  status: 'draft' | 'paid';
+  paid_at?: string;
+  notes?: string;
+}
+
+export interface GeneratePayrollRequest {
+  period_month: number;
+  period_year: number;
+  employee_ids?: string[];
+}
+
+export interface FinalizePayrollRequest {
+  record_ids: string[];
+}
+
+export interface PayrollFilter {
+  period_month?: number;
+  period_year?: number;
+  status?: string;
+  employee_id?: string;
+  page?: number;
+  limit?: number;
+  sort_by?: string;
+  sort_order?: string;
+}
+
+export interface ListPayrollRecordResponse {
+  data: PayrollRecord[];
+  total_count: number;
+  page: number;
+  limit: number;
+}
+
+export interface PayrollSummary {
+  period_month: number;
+  period_year: number;
+  total_employees: number;
+  total_base_salary: string;
+  total_allowances: string;
+  total_deductions: string;
+  total_late_deduction: string;
+  total_overtime: string;
+  total_gross_salary: string;
+  total_net_salary: string;
+  draft_count: number;
+  paid_count: number;
 }
 
 // ============================================
@@ -1074,8 +1240,21 @@ export const leaveApi = {
   },
 
   // Leave Requests
-  listRequests: async (): Promise<ApiResponse<LeaveRequest[]>> => {
-    return fetchWithAuth<LeaveRequest[]>(`${API_URL}/leave/requests`, {
+  listRequests: async (filter?: LeaveRequestFilter): Promise<ApiResponse<ListLeaveRequestResponse>> => {
+    const params = new URLSearchParams();
+    if (filter) {
+      if (filter.employee_id) params.append('employee_id', filter.employee_id);
+      if (filter.employee_name) params.append('employee_name', filter.employee_name);
+      if (filter.leave_type_id) params.append('leave_type_id', filter.leave_type_id);
+      if (filter.status) params.append('status', filter.status);
+      if (filter.start_date) params.append('start_date', filter.start_date);
+      if (filter.end_date) params.append('end_date', filter.end_date);
+      if (filter.page) params.append('page', String(filter.page));
+      if (filter.limit) params.append('limit', String(filter.limit));
+      if (filter.sort_by) params.append('sort_by', filter.sort_by);
+      if (filter.sort_order) params.append('sort_order', filter.sort_order);
+    }
+    return fetchWithAuth<ListLeaveRequestResponse>(`${API_URL}/leave/requests?${params}`, {
       method: 'GET',
     });
   },
@@ -1086,46 +1265,53 @@ export const leaveApi = {
     });
   },
 
-  getMyRequests: async (): Promise<ApiResponse<LeaveRequest[]>> => {
-    return fetchWithAuth<LeaveRequest[]>(`${API_URL}/leave/requests/my`, {
+  getMyRequests: async (filter?: LeaveRequestFilter): Promise<ApiResponse<ListLeaveRequestResponse>> => {
+    const params = new URLSearchParams();
+    if (filter) {
+      if (filter.leave_type_id) params.append('leave_type_id', filter.leave_type_id);
+      if (filter.status) params.append('status', filter.status);
+      if (filter.start_date) params.append('start_date', filter.start_date);
+      if (filter.end_date) params.append('end_date', filter.end_date);
+      if (filter.page) params.append('page', String(filter.page));
+      if (filter.limit) params.append('limit', String(filter.limit));
+      if (filter.sort_by) params.append('sort_by', filter.sort_by);
+      if (filter.sort_order) params.append('sort_order', filter.sort_order);
+    }
+    return fetchWithAuth<ListLeaveRequestResponse>(`${API_URL}/leave/requests/my?${params}`, {
       method: 'GET',
     });
   },
 
   createRequest: async (data: CreateLeaveRequestPayload, attachment?: File): Promise<ApiResponse<LeaveRequest>> => {
+    // Backend expects multipart form with 'data' field as JSON string
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(data));
+    
     if (attachment) {
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        if (value !== undefined) formData.append(key, value);
-      });
       formData.append('attachment', attachment);
-
-      const token = getAccessToken();
-      const response = await fetch(`${API_URL}/leave/requests`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-        credentials: 'include',
-      });
-      return handleResponse<LeaveRequest>(response);
     }
 
-    return fetchWithAuth<LeaveRequest>(`${API_URL}/leave/requests`, {
+    const token = getAccessToken();
+    const response = await fetch(`${API_URL}/leave/requests`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+      credentials: 'include',
     });
+    return handleResponse<LeaveRequest>(response);
   },
 
-  approveRequest: async (id: string): Promise<ApiResponse<LeaveRequest>> => {
+  approveRequest: async (id: string, reason?: string): Promise<ApiResponse<LeaveRequest>> => {
     return fetchWithAuth<LeaveRequest>(`${API_URL}/leave/requests/${id}/approve`, {
       method: 'POST',
+      body: JSON.stringify({ request_id: id, reason }),
     });
   },
 
-  rejectRequest: async (id: string, reason: string): Promise<ApiResponse<LeaveRequest>> => {
+  rejectRequest: async (id: string, reason?: string): Promise<ApiResponse<LeaveRequest>> => {
     return fetchWithAuth<LeaveRequest>(`${API_URL}/leave/requests/${id}/reject`, {
       method: 'POST',
-      body: JSON.stringify({ rejection_reason: reason }),
+      body: JSON.stringify({ request_id: id, reason }),
     });
   },
 };
@@ -1496,7 +1682,7 @@ export const payrollApi = {
     });
   },
 
-  updateSettings: async (data: Partial<PayrollSettings>): Promise<ApiResponse<PayrollSettings>> => {
+  updateSettings: async (data: UpdatePayrollSettingsRequest): Promise<ApiResponse<PayrollSettings>> => {
     return fetchWithAuth<PayrollSettings>(`${API_URL}/payroll/settings`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -1504,8 +1690,10 @@ export const payrollApi = {
   },
 
   // Components
-  listComponents: async (): Promise<ApiResponse<PayrollComponent[]>> => {
-    return fetchWithAuth<PayrollComponent[]>(`${API_URL}/payroll/components`, {
+  listComponents: async (activeOnly?: boolean): Promise<ApiResponse<PayrollComponent[]>> => {
+    const params = new URLSearchParams();
+    if (activeOnly) params.append('active_only', 'true');
+    return fetchWithAuth<PayrollComponent[]>(`${API_URL}/payroll/components?${params}`, {
       method: 'GET',
     });
   },
@@ -1516,7 +1704,7 @@ export const payrollApi = {
     });
   },
 
-  createComponent: async (data: Partial<PayrollComponent>): Promise<ApiResponse<PayrollComponent>> => {
+  createComponent: async (data: CreatePayrollComponentRequest): Promise<ApiResponse<PayrollComponent>> => {
     return fetchWithAuth<PayrollComponent>(`${API_URL}/payroll/components`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -1537,20 +1725,20 @@ export const payrollApi = {
   },
 
   // Employee Components
-  assignComponent: async (employeeId: string, data: { component_id: string; amount?: number }): Promise<ApiResponse<null>> => {
-    return fetchWithAuth<null>(`${API_URL}/payroll/employees/${employeeId}/components`, {
+  assignComponent: async (employeeId: string, data: AssignComponentRequest): Promise<ApiResponse<EmployeePayrollComponent>> => {
+    return fetchWithAuth<EmployeePayrollComponent>(`${API_URL}/payroll/employees/${employeeId}/components`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  getEmployeeComponents: async (employeeId: string): Promise<ApiResponse<PayrollComponent[]>> => {
-    return fetchWithAuth<PayrollComponent[]>(`${API_URL}/payroll/employees/${employeeId}/components`, {
+  getEmployeeComponents: async (employeeId: string): Promise<ApiResponse<EmployeePayrollComponent[]>> => {
+    return fetchWithAuth<EmployeePayrollComponent[]>(`${API_URL}/payroll/employees/${employeeId}/components`, {
       method: 'GET',
     });
   },
 
-  updateEmployeeComponent: async (id: string, data: { amount?: number }): Promise<ApiResponse<null>> => {
+  updateEmployeeComponent: async (id: string, data: { amount?: string; effective_date?: string; end_date?: string }): Promise<ApiResponse<null>> => {
     return fetchWithAuth<null>(`${API_URL}/payroll/employee-components/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -1564,21 +1752,26 @@ export const payrollApi = {
   },
 
   // Payroll Records
-  generate: async (data: { period_start: string; period_end: string; employee_ids?: string[] }): Promise<ApiResponse<PayrollRecord[]>> => {
+  generate: async (data: GeneratePayrollRequest): Promise<ApiResponse<PayrollRecord[]>> => {
     return fetchWithAuth<PayrollRecord[]>(`${API_URL}/payroll/generate`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  listRecords: async (filter?: { period_start?: string; period_end?: string; status?: string }): Promise<ApiResponse<PayrollRecord[]>> => {
+  listRecords: async (filter?: PayrollFilter): Promise<ApiResponse<ListPayrollRecordResponse>> => {
     const params = new URLSearchParams();
     if (filter) {
-      Object.entries(filter).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
+      if (filter.period_month) params.append('period_month', String(filter.period_month));
+      if (filter.period_year) params.append('period_year', String(filter.period_year));
+      if (filter.status) params.append('status', filter.status);
+      if (filter.employee_id) params.append('employee_id', filter.employee_id);
+      if (filter.page) params.append('page', String(filter.page));
+      if (filter.limit) params.append('limit', String(filter.limit));
+      if (filter.sort_by) params.append('sort_by', filter.sort_by);
+      if (filter.sort_order) params.append('sort_order', filter.sort_order);
     }
-    return fetchWithAuth<PayrollRecord[]>(`${API_URL}/payroll/records?${params}`, {
+    return fetchWithAuth<ListPayrollRecordResponse>(`${API_URL}/payroll/records?${params}`, {
       method: 'GET',
     });
   },
@@ -1602,21 +1795,18 @@ export const payrollApi = {
     });
   },
 
-  finalize: async (data: { period_start: string; period_end: string }): Promise<ApiResponse<null>> => {
+  finalize: async (data: FinalizePayrollRequest): Promise<ApiResponse<null>> => {
     return fetchWithAuth<null>(`${API_URL}/payroll/finalize`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  getSummary: async (filter?: { period_start?: string; period_end?: string }): Promise<ApiResponse<{ total_employees: number; total_net_salary: number }>> => {
+  getSummary: async (periodMonth: number, periodYear: number): Promise<ApiResponse<PayrollSummary>> => {
     const params = new URLSearchParams();
-    if (filter) {
-      Object.entries(filter).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
-    }
-    return fetchWithAuth<{ total_employees: number; total_net_salary: number }>(`${API_URL}/payroll/summary?${params}`, {
+    params.append('period_month', String(periodMonth));
+    params.append('period_year', String(periodYear));
+    return fetchWithAuth<PayrollSummary>(`${API_URL}/payroll/summary?${params}`, {
       method: 'GET',
     });
   },
