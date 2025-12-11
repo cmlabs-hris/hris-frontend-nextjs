@@ -3,6 +3,27 @@
 // ============================================
 
 const API_URL = 'http://localhost:8080/api/v1';
+const UPLOADS_URL = 'http://localhost:8080/uploads';
+
+// ============================================
+// Helper Functions
+// ============================================
+
+/**
+ * Get full URL for avatar/uploaded files
+ * @param path - Relative path from backend (e.g., 'avatars/EMP001/xxx.jpg')
+ * @returns Full URL or undefined if path is empty
+ */
+export const getUploadUrl = (path?: string): string | undefined => {
+  if (!path) return undefined;
+  // If already a full URL, return as-is
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  // Remove leading slash if present
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  return `${UPLOADS_URL}/${cleanPath}`;
+};
 
 // ============================================
 // Response Types (Based on backend response.go)
@@ -155,9 +176,9 @@ export interface EmployeeWithDetails extends Employee {
 }
 
 export interface CreateEmployeeRequest {
-  work_schedule_id?: string;
+  work_schedule_id: string;
   position_id: string;
-  grade_id?: string;
+  grade_id: string;
   branch_id?: string;
   employee_code: string;
   full_name: string;
@@ -912,24 +933,39 @@ export const employeeApi = {
   },
 
   create: async (data: CreateEmployeeRequest, avatar?: File): Promise<ApiResponse<Employee>> => {
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        formData.append(key, String(value));
-      }
-    });
-    if (avatar) {
-      formData.append('avatar', avatar);
-    }
-
     const token = getAccessToken();
-    const response = await fetch(`${API_URL}/employees`, {
+    
+    // Clean data: remove empty strings for optional fields (backend expects null/undefined, not empty string for UUID)
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([key, value]) => {
+        // Keep required fields and non-empty optional fields
+        const requiredFields = ['work_schedule_id', 'position_id', 'grade_id', 'employee_code', 'full_name', 'email', 'gender', 'phone_number', 'hire_date', 'employment_type'];
+        if (requiredFields.includes(key)) return true;
+        // For optional fields, only include if value is not empty string
+        return value !== '' && value !== null && value !== undefined;
+      })
+    );
+    
+    // If avatar is provided, use FormData with 'data' key for JSON and 'avatar' key for file
+    if (avatar) {
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(cleanData));
+      formData.append('avatar', avatar);
+
+      const response = await fetch(`${API_URL}/employees`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+        credentials: 'include',
+      });
+      return handleResponse<Employee>(response);
+    }
+    
+    // If no avatar, send as regular JSON
+    return fetchWithAuth<Employee>(`${API_URL}/employees`, {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: formData,
-      credentials: 'include',
+      body: JSON.stringify(cleanData),
     });
-    return handleResponse<Employee>(response);
   },
 
   update: async (id: string, data: UpdateEmployeeRequest): Promise<ApiResponse<Employee>> => {
