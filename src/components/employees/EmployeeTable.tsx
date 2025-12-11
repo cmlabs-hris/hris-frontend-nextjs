@@ -33,7 +33,6 @@ const DetailRow = ({ label, value, icon: Icon }: { label: string, value: string 
     </div>
 );
 
-// Komponen View Details Sheet (DIPERBARUI TOTAL)
 const ViewEmployeeSheet = ({ employee, children }: { employee: Employee, children: React.ReactNode }) => {
     return (
         <Sheet>
@@ -89,7 +88,6 @@ const ViewEmployeeSheet = ({ employee, children }: { employee: Employee, childre
     )
 }
 
-// Komponen Edit Dialog (tidak berubah)
 function DatePicker({ date, onDateChange }: { date: Date | undefined, onDateChange: (date: Date | undefined) => void }) {
   return ( <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!date && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{date ? format(date, "dd/MM/yyyy") : <span>dd/mm/yyyy</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={onDateChange} initialFocus /></PopoverContent></Popover> )
 }
@@ -144,7 +142,6 @@ export default function EmployeeTable({ employees, onUpdateEmployee, onDeleteEmp
         <div>
             <div className="rounded-md border">
                 <Table>
-                    {/* --- PERUBAHAN HEADER TABEL --- */}
                     <TableHeader className="bg-slate-100 dark:bg-slate-800">
                         <TableRow>
                             <TableHead className="w-[50px]">No</TableHead>
@@ -166,7 +163,6 @@ export default function EmployeeTable({ employees, onUpdateEmployee, onDeleteEmp
                                     {employee.name}
                                 </TableCell>
                                 <TableCell>{employee.position}</TableCell>
-                                {/* --- PENAMBAHAN KOLOM BARU --- */}
                                 <TableCell>{employee.contractType || '-'}</TableCell>
                                 <TableCell>{employee.branch}</TableCell>
                                 <TableCell>{employee.grade || '-'}</TableCell>
@@ -175,7 +171,7 @@ export default function EmployeeTable({ employees, onUpdateEmployee, onDeleteEmp
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><span className="sr-only">Open menu</span><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            {/* Panggil ViewEmployeeSheet di sini */}
+                                            {/* ViewEmployeeSheet */}
                                             <ViewEmployeeSheet employee={employee}>
                                                 <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent focus:bg-accent focus:text-accent-foreground">
                                                     <Eye className="mr-2 h-4 w-4" />

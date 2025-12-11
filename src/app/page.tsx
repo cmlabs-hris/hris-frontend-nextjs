@@ -121,10 +121,7 @@ const HRISLanding = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#1E3A5F] to-[#7CA5BF] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">HR</span>
-              </div>
-              <span className="text-xl font-bold text-[#1E3A5F]">HRIS Pro</span>
+              <img src="/logo.png" alt="HRIS logo" className="w-15 h-10 " />
             </div>
 
             {/* Desktop Menu */}
@@ -527,10 +524,9 @@ const HRISLanding = () => {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#7CA5BF] to-white rounded-lg flex items-center justify-center">
-                  <span className="text-[#1E3A5F] font-bold text-xl">HR</span>
+                <div className="flex items-center space-x-2">
+                  <img src="/logo2.png" alt="HRIS logo" className="w-15 h-10 rounded-lg object-cover" />
                 </div>
-                <span className="text-xl font-bold">HRIS Pro</span>
               </div>
               <p className="text-white/70">Platform HRIS terdepan untuk perusahaan modern</p>
             </div>

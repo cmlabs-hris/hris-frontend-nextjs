@@ -55,7 +55,7 @@ export default function ForgotPasswordPage() {
             </CardContent>
           </div>
         ) : (
-          // Tampilan Awal "Forgot Password"
+          // "Forgot Password"
           <div>
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold">Forgot Password</CardTitle>

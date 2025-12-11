@@ -15,10 +15,10 @@ import Image from 'next/image';
 const HrisLogo = () => (
     <div className="flex items-center gap-2">
         <Image
-            src="/logo.png" // Ganti dengan path logo Anda
+            src="/logo.png" 
             alt="HRIS Logo"
-            width={100} // Sesuaikan lebar logo Anda
-            height={28} // Sesuaikan tinggi logo Anda
+            width={100} 
+            height={28} 
             priority
         />
     </div>

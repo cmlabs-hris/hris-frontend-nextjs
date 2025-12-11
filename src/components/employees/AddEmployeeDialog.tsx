@@ -37,7 +37,6 @@ function DatePicker({ date, onDateChange }: { date: Date | undefined, onDateChan
           mode="single"
           selected={date}
           onSelect={onDateChange}
-          // --- PENAMBAHAN PROPERTI BARU DI SINI ---
           captionLayout="dropdown"
           fromYear={1960}
           toYear={2030}

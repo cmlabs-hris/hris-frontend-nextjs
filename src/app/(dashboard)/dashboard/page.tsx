@@ -7,7 +7,6 @@ import { useAuth } from "@/context/AuthContext";
 export default function DashboardPage() {
   const { user } = useAuth(); // Ambil data user dari context
 
-  // Tampilkan loading atau fallback jika user belum ada
   if (!user) {
     return <div>Loading user data...</div>;
   }

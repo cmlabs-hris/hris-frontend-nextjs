@@ -1,9 +1,14 @@
 'use client'
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Calendar } from "lucide-react";
 
 // --- Data Fiktif untuk Desain Baru ---
 const userStats = [
@@ -34,11 +39,97 @@ const workHoursData = [
     { name: 'March 26', value: 3 },
 ];
 
+// Daftar bulan
+const months = [
+    { value: 'january', label: 'Januari' },
+    { value: 'february', label: 'Februari' },
+    { value: 'march', label: 'Maret' },
+    { value: 'april', label: 'April' },
+    { value: 'may', label: 'Mei' },
+    { value: 'june', label: 'Juni' },
+    { value: 'july', label: 'Juli' },
+    { value: 'august', label: 'Agustus' },
+    { value: 'september', label: 'September' },
+    { value: 'october', label: 'Oktober' },
+    { value: 'november', label: 'November' },
+    { value: 'december', label: 'Desember' },
+];
+
 
 export default function UserDashboard() {
+  const [selectedMonth, setSelectedMonth] = useState('march');
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [tempDateRange, setTempDateRange] = useState({ from: '', to: '' });
+  const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
+
+  const handleDateRangeSelect = () => {
+    if (tempDateRange.from && tempDateRange.to) {
+      setDateRange(tempDateRange);
+      setIsDateDialogOpen(false);
+    }
+  };
   return (
     <div className="space-y-6">
-        {/* Kartu Statistik Atas */}
+        {/* Kartu Statistik Atas - Dengan Pilihan Bulan dan Rentang Waktu */}
+        <div className="flex gap-4 items-center">
+            {/* <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    {months.map((month) => (
+                        <SelectItem key={month.value} value={month.value}>
+                            {month.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select> */}
+
+            <Dialog open={isDateDialogOpen} onOpenChange={setIsDateDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Pilih Rentang Waktu
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Pilih Rentang Waktu</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="from-date">Dari Tanggal</Label>
+                            <Input
+                                id="from-date"
+                                type="date"
+                                value={tempDateRange.from}
+                                onChange={(e) => setTempDateRange({ ...tempDateRange, from: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="to-date">Sampai Tanggal</Label>
+                            <Input
+                                id="to-date"
+                                type="date"
+                                value={tempDateRange.to}
+                                onChange={(e) => setTempDateRange({ ...tempDateRange, to: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleDateRangeSelect}>
+                            Terapkan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {dateRange.from && dateRange.to && (
+                <div className="text-sm text-muted-foreground">
+                    {dateRange.from} hingga {dateRange.to}
+                </div>
+            )}
+        </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {userStats.map(stat => (
                 <Card key={stat.title}>
