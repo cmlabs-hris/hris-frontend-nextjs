@@ -56,14 +56,23 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar: () => voi
                         >
                             <Avatar>
                                 <AvatarImage src="https://i.pravatar.cc/40" alt="User Avatar" />
-                                <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+                                <AvatarFallback>{user?.email?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
                             </Avatar>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>{user?.name || 'My Account'}</DropdownMenuLabel>
+                        <DropdownMenuLabel>
+                            <div className="flex flex-col">
+                                <span>{user?.email || 'My Account'}</span>
+                                <span className="text-xs font-normal text-muted-foreground capitalize">
+                                    {user?.role || 'User'}
+                                </span>
+                            </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => router.push('/settings')}>Settings</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => router.push('/contact-service')}>Support</DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={logout} className="text-red-500">Logout</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

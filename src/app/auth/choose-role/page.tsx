@@ -1,11 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import AnimatedBubbles from '@/components/auth/AnimatedBubbles';
 import { Button } from '@/components/ui/button';
-import { Shield, User } from 'lucide-react'; 
+import { Building2, Users } from 'lucide-react'; 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 // Komponen kartu yang bisa digunakan kembali untuk setiap peran
 const RoleCard = ({ 
@@ -52,6 +54,31 @@ const RoleCard = ({
 
 export default function ChooseRolePage() {
     const router = useRouter();
+    const { user, isAuthenticated, isLoading } = useAuth();
+
+    // Redirect jika sudah punya company
+    useEffect(() => {
+        if (!isLoading && isAuthenticated && user?.company_id) {
+            router.push('/dashboard');
+        }
+    }, [isLoading, isAuthenticated, user, router]);
+
+    // Redirect jika belum login
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            router.push('/auth');
+        }
+    }, [isLoading, isAuthenticated, router]);
+
+    if (isLoading) {
+        return (
+            <main className="relative flex items-center justify-center min-h-screen bg-[#3B82F6] overflow-hidden p-4">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#3B82F6] to-[#1E40AF] -z-20" />
+                <AnimatedBubbles />
+                <div className="text-white text-xl">Loading...</div>
+            </main>
+        );
+    }
 
     return (
         <main className="relative flex items-center justify-center min-h-screen bg-[#3B82F6] overflow-hidden p-4">
@@ -63,30 +90,22 @@ export default function ChooseRolePage() {
                 <p className="text-white/80 mb-12 max-w-md">Select whether you are setting up a new workspace for your team or joining an existing one.</p>
                 
                 <div className="flex flex-col md:flex-row gap-8">
+                    {/* Kartu untuk Owner - Create Company */}
                     <RoleCard
-                        icon={Shield}
-                        title="Super Admin"
-                        description="Create and manage a new company workspace for your team."
-                        buttonText="I'm a Super Admin"
-                        onClick={() => router.push('/auth/create-company')}
-                        className="group"
-                    />
-                    {/* Kartu untuk Admin */}
-                    <RoleCard
-                        icon={Shield}
-                        title="Admin"
-                        description="Create and manage a new company workspace for your team."
-                        buttonText="I'm an Admin"
+                        icon={Building2}
+                        title="Create Company"
+                        description="Create and manage a new company workspace for your team as the owner."
+                        buttonText="Create New Company"
                         onClick={() => router.push('/auth/create-company')}
                         className="group"
                     />
 
-                    {/* Kartu untuk Employee */}
+                    {/* Kartu untuk Employee - Join Company */}
                      <RoleCard
-                        icon={User}
-                        title="Employee"
+                        icon={Users}
+                        title="Join Company"
                         description="Join an existing company workspace you've been invited to."
-                        buttonText="I'm an Employee"
+                        buttonText="Join Existing Company"
                         onClick={() => router.push('/auth/join-company')}
                         className="group"
                     />

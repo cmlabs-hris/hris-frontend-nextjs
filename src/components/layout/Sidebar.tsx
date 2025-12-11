@@ -8,21 +8,26 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Home, Users, Clock, Calendar, FileText, Settings, LifeBuoy, Building2, Plane, Banknote } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 
+// Roles from backend:
+// - owner: Company owner (created company) - full access
+// - manager: Can approve leave/attendance
+// - employee: Regular employee (joined company)
+// - pending: Still in onboarding
+
 const navItems = [
-    { href: "/dashboard", icon: Home, label: "DASHBOARD", roles: ['admin', 'user', 'superadmin'] },
-    { href: "/employees", icon: Users, label: "EMPLOYEE", roles: ['admin', 'superadmin'] },
-    { href: "/check-clock", icon: Clock, label: "CHECKCLOCK", roles: ['admin', 'superadmin'] },
-    { href: "/payroll", icon: Banknote, label: "PAYROLL", roles: ['admin', 'superadmin'] },
-    { href: "/attendance", icon: Calendar, label: "ATTENDANCE", roles: ['user'] },
-    { href: "/leave", icon: Plane, label: "LEAVE MANAGEMENT", roles: ['admin', 'superadmin'] },
-    { href: "/company-settings", icon: Building2, label: "COMPANY SETTINGS", roles: ['superadmin'] },
-    { href: "/reports", icon: FileText, label: "REPORTS", roles: ['admin', 'superadmin'] },
-    
+    { href: "/dashboard", icon: Home, label: "DASHBOARD", roles: ['owner', 'manager', 'employee'] },
+    { href: "/employees", icon: Users, label: "EMPLOYEE", roles: ['owner', 'manager'] },
+    { href: "/check-clock", icon: Clock, label: "CHECKCLOCK", roles: ['owner', 'manager'] },
+    { href: "/payroll", icon: Banknote, label: "PAYROLL", roles: ['owner', 'manager'] },
+    { href: "/attendance", icon: Calendar, label: "ATTENDANCE", roles: ['employee'] },
+    { href: "/leave", icon: Plane, label: "LEAVE MANAGEMENT", roles: ['owner', 'manager'] },
+    { href: "/company-settings", icon: Building2, label: "COMPANY SETTINGS", roles: ['owner'] },
+    { href: "/reports", icon: FileText, label: "REPORTS", roles: ['owner', 'manager'] },
 ];
 
 const bottomNavItems = [
-    { href: "/contact-service", icon: LifeBuoy, label: "CONTACT SERVICE", roles: ['admin', 'user', 'superadmin'] },
-    { href: "/settings", icon: Settings, label: "SETTINGS", roles: ['admin', 'user', 'superadmin'] },
+    { href: "/contact-service", icon: LifeBuoy, label: "CONTACT SERVICE", roles: ['owner', 'manager', 'employee'] },
+    { href: "/settings", icon: Settings, label: "SETTINGS", roles: ['owner', 'manager', 'employee'] },
 ];
 
 export default function Sidebar({ isOpen }: { isOpen: boolean }) {

@@ -7,17 +7,45 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AnimatedBubbles from '@/components/auth/AnimatedBubbles';
-import { ArrowLeft, Mail } from 'lucide-react';
+import { ArrowLeft, Mail, Loader2 } from 'lucide-react';
+import { authApi, ApiError } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement logic to send reset link to backend
-    console.log('Sending reset link to:', email);
-    setEmailSent(true); // Ganti tampilan setelah email dikirim
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await authApi.forgotPassword({ email });
+      setEmailSent(true);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        // Don't show error for security - always show success
+        // This prevents email enumeration attacks
+        setEmailSent(true);
+      } else {
+        setError('Failed to send reset link. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setIsLoading(true);
+    try {
+      await authApi.forgotPassword({ email });
+    } catch {
+      // Silently handle - don't show error for security
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -44,7 +72,14 @@ export default function ForgotPasswordPage() {
                 <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer">OPEN GMAIL</a>
               </Button>
               <p className="text-center text-sm text-slate-500">
-                Didn't receive the email? <button onClick={() => handleSubmit(new Event('submit') as any)} className="font-semibold text-blue-600 hover:underline">Click here to resend</button>
+                Didn&apos;t receive the email?{' '}
+                <button 
+                  onClick={handleResend} 
+                  className="font-semibold text-blue-600 hover:underline disabled:opacity-50"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Sending...' : 'Click here to resend'}
+                </button>
               </p>
                <div className="mt-4 text-center">
                 <Link href="/auth" className="text-sm font-medium text-slate-600 hover:text-slate-900 inline-flex items-center gap-1">
@@ -60,10 +95,16 @@ export default function ForgotPasswordPage() {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold">Forgot Password</CardTitle>
               <CardDescription>
-                No worries! Enter your email address below, and we'll send you a link to reset your password.
+                No worries! Enter your email address below, and we&apos;ll send you a link to reset your password.
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
+              
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="email-forgot">Email</Label>
@@ -74,10 +115,22 @@ export default function ForgotPasswordPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
-                <Button type="submit" className="w-full bg-[#1E3A5F] hover:bg-slate-700 text-white font-semibold py-6">
-                  SEND RESET LINK
+                <Button 
+                  type="submit" 
+                  className="w-full bg-[#1E3A5F] hover:bg-slate-700 text-white font-semibold py-6"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      SENDING...
+                    </>
+                  ) : (
+                    'SEND RESET LINK'
+                  )}
                 </Button>
               </form>
               <div className="mt-6 text-center">

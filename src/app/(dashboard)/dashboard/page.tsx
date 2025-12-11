@@ -5,13 +5,18 @@ import UserDashboard from "@/components/dashboard/UserDashboard";
 import { useAuth } from "@/context/AuthContext";
 
 export default function DashboardPage() {
-  const { user } = useAuth(); // Ambil data user dari context
+  const { user } = useAuth();
 
   if (!user) {
     return <div>Loading user data...</div>;
   }
 
-  // Tampilkan dashboard berdasarkan peran (role) dari user yang sedang login
-  return user.role === 'admin' || user.role === 'superadmin' ? <AdminDashboard /> : <UserDashboard />;
+  // Show dashboard based on role:
+  // - owner: Company owner (created company) - sees admin dashboard
+  // - manager: Can manage employees - sees admin dashboard  
+  // - employee: Regular employee (joined company) - sees user dashboard
+  const isAdminRole = user.role === 'owner' || user.role === 'manager';
+  
+  return isAdminRole ? <AdminDashboard /> : <UserDashboard />;
 }
 
