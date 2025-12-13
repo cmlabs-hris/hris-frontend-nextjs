@@ -34,7 +34,7 @@ interface AuthContextType {
   loginWithGoogle: () => void;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
-  refreshAuth: () => Promise<void>;
+  refreshAuth: () => Promise<boolean>;
   error: string | null;
   clearError: () => void;
 }
@@ -87,18 +87,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Refresh auth by getting new access token
-  const refreshAuth = useCallback(async () => {
+  const refreshAuth = useCallback(async (): Promise<boolean> => {
+    setIsLoading(true);
     try {
       const response = await authApi.refreshToken({} as never);
-      if (response.data) {
+      if (response.success && response.data) {
         setAccessToken(response.data.access_token, response.data.access_token_expires_in);
         const userData = parseJwt(response.data.access_token);
         setUser(userData);
+        setIsLoading(false);
+        return true;
       }
+      setIsLoading(false);
+      return false;
     } catch {
       // Refresh failed, clear auth state
       clearTokens();
       setUser(null);
+      setIsLoading(false);
+      return false;
     }
   }, []);
 

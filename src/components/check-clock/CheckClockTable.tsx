@@ -20,18 +20,15 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DateRange } from "react-day-picker"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { attendanceApi, Attendance, AttendanceFilter } from '@/lib/api';
+import { attendanceApi, Attendance, AttendanceFilter, ListAttendanceResponse } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
-// Extended Attendance with employee details
+// Extended Attendance with additional fields for UI
 export interface AttendanceWithEmployee extends Attendance {
-    employee_name?: string;
     employee_code?: string;
-    position_name?: string;
     branch_name?: string;
-    work_hours_in_minutes?: number;
-    clock_in_photo?: string;
-    clock_out_photo?: string;
 }
 
 // View Attendance Sheet with Approve/Reject
@@ -44,20 +41,28 @@ const ViewAttendanceSheet = ({
 }: { 
     record: AttendanceWithEmployee;
     onApprove: (id: string) => void;
-    onReject: (id: string) => void;
+    onReject: (id: string, reason: string) => void;
     isApproving: boolean;
     isRejecting: boolean;
 }) => {
+    const [rejectReason, setRejectReason] = React.useState('');
+    
     const formatTime = (timeStr?: string) => {
         if (!timeStr) return '-';
+        // Format from backend is "2006-01-02 15:04:05" - extract HH:MM
+        if (timeStr.includes(' ')) {
+            const timePart = timeStr.split(' ')[1];
+            return timePart ? timePart.substring(0, 5) : '-';
+        }
+        // Fallback for time-only format (HH:MM:SS or HH:MM)
         return timeStr.substring(0, 5);
     };
 
-    const formatWorkHours = (minutes?: number) => {
-        if (!minutes) return '-';
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        return `${hours}h ${mins}m`;
+    const formatWorkHours = (hours?: number) => {
+        if (!hours) return '-';
+        const h = Math.floor(hours);
+        const mins = Math.round((hours - h) * 60);
+        return `${h}h ${mins}m`;
     };
 
     const getStatusBadge = (status: string) => {
@@ -97,7 +102,7 @@ const ViewAttendanceSheet = ({
                         </div>
                         <div>
                             <p className="font-semibold">{record.employee_name || 'Unknown Employee'}</p>
-                            <p className="text-sm text-gray-500">{record.position_name || 'No Position'}</p>
+                            <p className="text-sm text-gray-500">{record.employee_position || 'No Position'}</p>
                             <p className="text-xs text-gray-400">{record.employee_code}</p>
                         </div>
                         {getStatusBadge(record.status)}
@@ -114,16 +119,22 @@ const ViewAttendanceSheet = ({
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Check In:</span>
-                                <span>{formatTime(record.clock_in)}</span>
+                                <span>{formatTime(record.clock_in_time)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Check Out:</span>
-                                <span>{formatTime(record.clock_out)}</span>
+                                <span>{formatTime(record.clock_out_time)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Work Hours:</span>
-                                <span>{formatWorkHours(record.work_hours_in_minutes)}</span>
+                                <span>{formatWorkHours(record.working_hours)}</span>
                             </div>
+                            {record.is_late && (
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Late:</span>
+                                    <span className="text-red-500">{record.late_minutes} minutes</span>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                     
@@ -150,39 +161,38 @@ const ViewAttendanceSheet = ({
                             )}
                         </CardContent>
                     </Card>
-
-                    {record.notes && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Notes</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm text-gray-600">{record.notes}</p>
-                            </CardContent>
-                        </Card>
-                    )}
                 </div>
                 
                 {record.status === 'waiting_approval' && (
-                    <SheetFooter className="flex gap-2 mt-4">
-                        <Button 
-                            variant="destructive" 
-                            onClick={() => onReject(record.id)}
-                            disabled={isRejecting || isApproving}
-                            className="flex-1"
-                        >
-                            {isRejecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
-                            Reject
-                        </Button>
-                        <Button 
-                            onClick={() => onApprove(record.id)}
-                            disabled={isApproving || isRejecting}
-                            className="flex-1"
-                        >
-                            {isApproving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                            Approve
-                        </Button>
-                    </SheetFooter>
+                    <div className="mt-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label>Rejection Reason (required for reject)</Label>
+                            <Textarea 
+                                placeholder="Enter reason for rejection..."
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                            />
+                        </div>
+                        <SheetFooter className="flex gap-2">
+                            <Button 
+                                variant="destructive" 
+                                onClick={() => onReject(record.id, rejectReason)}
+                                disabled={isRejecting || isApproving || !rejectReason.trim()}
+                                className="flex-1"
+                            >
+                                {isRejecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
+                                Reject
+                            </Button>
+                            <Button 
+                                onClick={() => onApprove(record.id)}
+                                disabled={isApproving || isRejecting}
+                                className="flex-1"
+                            >
+                                {isApproving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                                Approve
+                            </Button>
+                        </SheetFooter>
+                    </div>
                 )}
             </SheetContent>
         </Sheet>
@@ -295,6 +305,7 @@ export default function CheckClockTable({ searchQuery }: CheckClockTableProps) {
     const [approvingId, setApprovingId] = useState<string | null>(null);
     const [rejectingId, setRejectingId] = useState<string | null>(null);
     const [filters, setFilters] = useState<{ status: string; date: DateRange | undefined }>({ status: '', date: undefined });
+    const [dialogRejectReason, setDialogRejectReason] = useState<string>('');
     const { toast } = useToast();
 
     // Fetch attendance data
@@ -315,7 +326,9 @@ export default function CheckClockTable({ searchQuery }: CheckClockTableProps) {
 
             const response = await attendanceApi.list(filter);
             if (response.success && response.data) {
-                setAttendanceData(response.data as AttendanceWithEmployee[]);
+                // Extract attendances array from ListAttendanceResponse
+                const listResponse = response.data;
+                setAttendanceData(listResponse.attendances as AttendanceWithEmployee[]);
             } else {
                 setAttendanceData([]);
             }
@@ -350,7 +363,7 @@ export default function CheckClockTable({ searchQuery }: CheckClockTableProps) {
             const filtered = attendanceData.filter(record => 
                 record.employee_name?.toLowerCase().includes(query) ||
                 record.employee_code?.toLowerCase().includes(query) ||
-                record.position_name?.toLowerCase().includes(query) ||
+                record.employee_position?.toLowerCase().includes(query) ||
                 record.branch_name?.toLowerCase().includes(query)
             );
             setFilteredData(filtered);
@@ -384,10 +397,18 @@ export default function CheckClockTable({ searchQuery }: CheckClockTableProps) {
     };
 
     // Handle reject
-    const handleReject = async (id: string) => {
+    const handleReject = async (id: string, reason: string) => {
+        if (!reason.trim()) {
+            toast({
+                title: "Error",
+                description: "Rejection reason is required",
+                variant: "destructive",
+            });
+            return;
+        }
         try {
             setRejectingId(id);
-            const response = await attendanceApi.reject(id);
+            const response = await attendanceApi.reject(id, reason);
             if (response.success) {
                 toast({
                     title: "Success",
@@ -449,10 +470,10 @@ export default function CheckClockTable({ searchQuery }: CheckClockTableProps) {
         filteredData.forEach(record => {
             tableRows.push([
                 record.employee_name || '-',
-                record.position_name || '-',
+                record.employee_position || '-',
                 record.date ? format(new Date(record.date), "yyyy-MM-dd") : '-',
-                record.clock_in?.substring(0, 5) || '-',
-                record.clock_out?.substring(0, 5) || '-',
+                record.clock_in_time?.substring(0, 5) || '-',
+                record.clock_out_time?.substring(0, 5) || '-',
                 record.status || '-'
             ]);
         });
@@ -461,9 +482,15 @@ export default function CheckClockTable({ searchQuery }: CheckClockTableProps) {
         doc.save("check_clock_report.pdf");
     };
 
-    // Format time helper
+    // Format time helper - backend returns "YYYY-MM-DD HH:MM:SS" format
     const formatTime = (timeStr?: string) => {
         if (!timeStr) return '-';
+        // Format from backend is "2006-01-02 15:04:05" - extract HH:MM
+        if (timeStr.includes(' ')) {
+            const timePart = timeStr.split(' ')[1];
+            return timePart ? timePart.substring(0, 5) : '-';
+        }
+        // Fallback for time-only format (HH:MM:SS or HH:MM)
         return timeStr.substring(0, 5);
     };
 
@@ -538,13 +565,13 @@ export default function CheckClockTable({ searchQuery }: CheckClockTableProps) {
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell>{record.position_name || '-'}</TableCell>
+                                    <TableCell>{record.employee_position || '-'}</TableCell>
                                     <TableCell>{record.date ? format(new Date(record.date), "MMM dd, yyyy") : '-'}</TableCell>
-                                    <TableCell>{formatTime(record.clock_in)}</TableCell>
-                                    <TableCell>{formatTime(record.clock_out)}</TableCell>
+                                    <TableCell>{formatTime(record.clock_in_time)}</TableCell>
+                                    <TableCell>{formatTime(record.clock_out_time)}</TableCell>
                                     <TableCell>
                                         {record.status === 'waiting_approval' ? (
-                                            <AlertDialog>
+                                            <AlertDialog onOpenChange={(open) => { if (!open) setDialogRejectReason(''); }}>
                                                 <AlertDialogTrigger asChild>
                                                     {getStatusBadge(record.status)}
                                                 </AlertDialogTrigger>
@@ -555,12 +582,35 @@ export default function CheckClockTable({ searchQuery }: CheckClockTableProps) {
                                                             What would you like to do with this attendance record for {record.employee_name}?
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
-                                                    <AlertDialogFooter>
+                                                    <div className="py-4">
+                                                        <Label htmlFor="reject-reason" className="text-sm font-medium">
+                                                            Rejection Reason (required for reject)
+                                                        </Label>
+                                                        <Textarea
+                                                            id="reject-reason"
+                                                            placeholder="Enter reason for rejection..."
+                                                            value={dialogRejectReason}
+                                                            onChange={(e) => setDialogRejectReason(e.target.value)}
+                                                            className="mt-2"
+                                                            rows={3}
+                                                        />
+                                                    </div>
+                                                    <AlertDialogFooter className="gap-2">
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                         <Button 
-                                                            variant="destructive" 
-                                                            onClick={() => handleReject(record.id)}
-                                                            disabled={rejectingId === record.id}
+                                                            variant="destructive"
+                                                            onClick={() => {
+                                                                if (!dialogRejectReason.trim()) {
+                                                                    toast({
+                                                                        title: "Error",
+                                                                        description: "Please provide a rejection reason",
+                                                                        variant: "destructive",
+                                                                    });
+                                                                    return;
+                                                                }
+                                                                handleReject(record.id, dialogRejectReason);
+                                                            }}
+                                                            disabled={rejectingId === record.id || !dialogRejectReason.trim()}
                                                         >
                                                             {rejectingId === record.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
                                                             Reject
@@ -602,10 +652,6 @@ export default function CheckClockTable({ searchQuery }: CheckClockTableProps) {
                                                         <DropdownMenuItem onClick={() => handleApprove(record.id)}>
                                                             <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
                                                             Approve
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleReject(record.id)}>
-                                                            <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                                                            Reject
                                                         </DropdownMenuItem>
                                                     </>
                                                 )}

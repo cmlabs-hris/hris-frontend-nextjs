@@ -5,7 +5,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Home, Users, Clock, Calendar, FileText, Settings, LifeBuoy, Building2, Plane, Banknote } from "lucide-react"
+import { Home, Users, Clock, Calendar, FileText, Settings, LifeBuoy, Building2, Plane, Banknote, CalendarClock } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 
 // Roles from backend:
@@ -18,6 +18,7 @@ const navItems = [
     { href: "/dashboard", icon: Home, label: "DASHBOARD", roles: ['owner', 'manager', 'employee'] },
     { href: "/employees", icon: Users, label: "EMPLOYEE", roles: ['owner', 'manager'] },
     { href: "/check-clock", icon: Clock, label: "CHECKCLOCK", roles: ['owner', 'manager'] },
+    { href: "/schedule", icon: CalendarClock, label: "SCHEDULE", roles: ['owner', 'manager'] },
     { href: "/payroll", icon: Banknote, label: "PAYROLL", roles: ['owner', 'manager'] },
     { href: "/attendance", icon: Calendar, label: "ATTENDANCE", roles: ['employee'] },
     { href: "/leave", icon: Plane, label: "LEAVE MANAGEMENT", roles: ['owner', 'manager'] },

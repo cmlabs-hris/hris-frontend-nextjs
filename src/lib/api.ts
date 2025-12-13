@@ -236,6 +236,15 @@ export interface EmployeeFilter {
   limit?: number;
 }
 
+export interface ListEmployeeResponse {
+  total_count: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  showing: string;
+  employees: EmployeeWithDetails[];
+}
+
 // ============================================
 // Leave DTOs
 // ============================================
@@ -418,95 +427,120 @@ export interface CreatePositionRequest {
 }
 
 // ============================================
-// Schedule DTOs
-// ============================================
-
-export interface WorkSchedule {
-  id: string;
-  company_id: string;
-  name: string;
-  type: 'WFO' | 'Hybrid';
-  description?: string;
-  times?: WorkScheduleTime[];
-  locations?: WorkScheduleLocation[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface WorkScheduleTime {
-  id: string;
-  work_schedule_id: string;
-  day_of_week: number;
-  start_time: string;
-  end_time: string;
-  is_off_day: boolean;
-}
-
-export interface WorkScheduleLocation {
-  id: string;
-  work_schedule_id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  radius_meters: number;
-}
-
-export interface EmployeeScheduleAssignment {
-  id: string;
-  employee_id: string;
-  work_schedule_id: string;
-  start_date: string;
-  end_date?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// ============================================
 // Attendance DTOs
 // ============================================
 
 export interface Attendance {
   id: string;
   employee_id: string;
-  work_schedule_id: string;
+  employee_name: string;
+  employee_position?: string;
   date: string;
-  clock_in?: string;
-  clock_out?: string;
+  clock_in_time?: string;
+  clock_out_time?: string;
   clock_in_latitude?: number;
   clock_in_longitude?: number;
   clock_out_latitude?: number;
   clock_out_longitude?: number;
-  status: 'present' | 'late' | 'absent' | 'waiting_approval';
-  notes?: string;
+  clock_in_proof_url?: string;
+  clock_out_proof_url?: string;
+  working_hours?: number;
+  status: 'present' | 'late' | 'absent' | 'waiting_approval' | 'on_leave' | 'holiday';
+  is_late?: boolean;
+  is_early_leave?: boolean;
+  late_minutes?: number;
+  early_leave_minutes?: number;
   created_at: string;
   updated_at: string;
 }
 
+export interface ListAttendanceResponse {
+  total_count: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  showing: string;
+  attendances: Attendance[];
+}
+
 export interface ClockInRequest {
+  employee_id: string;
   latitude: number;
   longitude: number;
-  notes?: string;
 }
 
 export interface ClockOutRequest {
+  employee_id: string;
   latitude: number;
   longitude: number;
-  notes?: string;
+}
+
+export interface UpdateAttendanceRequest {
+  date?: string;
+  clock_in_time?: string;
+  clock_out_time?: string;
+  clock_in_latitude?: number;
+  clock_in_longitude?: number;
+  clock_out_latitude?: number;
+  clock_out_longitude?: number;
+  status?: string;
+  late_minutes?: number;
+  early_leave_minutes?: number;
+  overtime_minutes?: number;
 }
 
 export interface AttendanceFilter {
   employee_id?: string;
+  employee_name?: string;
+  date?: string;
   start_date?: string;
   end_date?: string;
   status?: string;
   page?: number;
   limit?: number;
+  sort_by?: string;
+  sort_order?: string;
 }
 
 // ============================================
 // Invitation DTOs
 // ============================================
 
+// Response from GET /invitations/my
+export interface MyInvitation {
+  token: string;
+  company_name: string;
+  company_logo?: string;
+  position_name?: string;
+  inviter_name: string;
+  expires_at: string;
+  created_at: string;
+}
+
+// Response from GET /invitations/view/{token}
+export interface InvitationDetail {
+  token: string;
+  email: string;
+  employee_name: string;
+  company_name: string;
+  company_logo?: string;
+  position_name?: string;
+  role: 'employee' | 'manager';
+  inviter_name: string;
+  status: 'pending' | 'accepted' | 'revoked';
+  expires_at: string;
+  is_expired: boolean;
+}
+
+// Response from POST /invitations/{token}/accept
+export interface AcceptInvitationResponse {
+  message: string;
+  company_id: string;
+  company_name: string;
+  employee_id: string;
+}
+
+// Legacy interface for backward compatibility
 export interface Invitation {
   id: string;
   company_id: string;
@@ -652,9 +686,325 @@ export interface PayrollSummary {
 }
 
 // ============================================
+// Schedule DTOs
+// ============================================
+
+export interface WorkSchedule {
+  id: string;
+  company_id: string;
+  name: string;
+  type: 'WFO' | 'WFA' | 'Hybrid';
+  grace_period_minutes: number;
+  times?: WorkScheduleTime[];
+  locations?: WorkScheduleLocation[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkScheduleTime {
+  id: string;
+  work_schedule_id: string;
+  day_of_week: number;
+  day_name: string;
+  clock_in_time: string;
+  break_start_time?: string;
+  break_end_time?: string;
+  clock_out_time: string;
+  is_next_day_checkout: boolean;
+  location_type: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkScheduleLocation {
+  id: string;
+  work_schedule_id: string;
+  location_name: string;
+  latitude: number;
+  longitude: number;
+  radius_meters: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ListWorkScheduleResponse {
+  total_count: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  showing: string;
+  work_schedules: WorkSchedule[];
+}
+
+export interface WorkScheduleFilter {
+  name?: string;
+  type?: string;
+  page?: number;
+  limit?: number;
+  sort_by?: string;
+  sort_order?: string;
+}
+
+export interface CreateWorkScheduleRequest {
+  name: string;
+  type: 'WFO' | 'WFA' | 'Hybrid';
+  grace_period_minutes: number;
+}
+
+export interface UpdateWorkScheduleRequest {
+  name?: string;
+  type?: string;
+  grace_period_minutes?: number;
+}
+
+export interface CreateWorkScheduleTimeRequest {
+  work_schedule_id: string;
+  day_of_week: number;
+  clock_in_time: string;
+  clock_out_time: string;
+  is_next_day_checkout: boolean;
+  break_start_time?: string;
+  break_end_time?: string;
+  location_type: string;
+}
+
+export interface UpdateWorkScheduleTimeRequest {
+  day_of_week?: number;
+  clock_in_time: string;
+  clock_out_time: string;
+  is_next_day_checkout: boolean;
+  break_start_time?: string;
+  break_end_time?: string;
+  location_type: string;
+}
+
+export interface CreateWorkScheduleLocationRequest {
+  work_schedule_id: string;
+  location_name: string;
+  latitude: number;
+  longitude: number;
+  radius_meters: number;
+}
+
+export interface UpdateWorkScheduleLocationRequest {
+  location_name?: string;
+  latitude?: number;
+  longitude?: number;
+  radius_meters?: number;
+}
+
+export interface EmployeeScheduleAssignment {
+  id: string;
+  employee_id: string;
+  work_schedule_id: string;
+  start_date: string;
+  end_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateEmployeeScheduleAssignmentRequest {
+  employee_id: string;
+  work_schedule_id: string;
+  start_date: string;
+  end_date?: string;
+}
+
+export interface UpdateEmployeeScheduleAssignmentRequest {
+  employee_id: string;
+  work_schedule_id: string;
+  start_date: string;
+  end_date: string;
+}
+
+export interface AssignScheduleRequest {
+  start_date: string;
+  end_date?: string;
+}
+
+export interface ActiveScheduleResponse {
+  schedule_id: string;
+  schedule_name: string;
+  location_type: string;
+  grace_period_minutes: number;
+  time_id: string;
+  clock_in: string;
+  clock_out: string;
+  is_next_day_checkout: boolean;
+  locations: ScheduleLocationInfo[];
+}
+
+export interface ScheduleLocationInfo {
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius_meters: number;
+}
+
+export interface EmployeeScheduleTimeline {
+  employee_id: string;
+  employee_name: string;
+  total_count: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  showing: string;
+  timeline: EmployeeScheduleTimelineItem[];
+}
+
+export interface EmployeeScheduleTimelineItem {
+  id?: string;
+  type: 'override' | 'default';
+  status: 'active' | 'upcoming' | 'past' | 'fallback';
+  date_range: {
+    start?: string;
+    end?: string;
+  };
+  schedule_snapshot: {
+    id: string;
+    name: string;
+    type: string;
+    grace_period_minutes: number;
+  };
+  is_active_today: boolean;
+  actions: {
+    can_edit: boolean;
+    can_delete: boolean;
+    can_replace?: boolean;
+  };
+}
+
+// ============================================
 // Dashboard DTOs
 // ============================================
 
+// Admin Dashboard Types
+export interface AdminDashboardData {
+  employee_summary: EmployeeSummaryResponse;
+  employee_current_number: EmployeeCurrentNumberResponse;
+  employee_status_stats: EmployeeStatusStatsResponse;
+  attendance_stats: AttendanceStatsResponse;
+  monthly_attendance: MonthlyAttendanceResponse;
+}
+
+export interface EmployeeSummaryResponse {
+  total_employee: number;
+  new_employee: number;
+  active_employee: number;
+  resigned_employee: number;
+  updated_at?: string;
+}
+
+export interface EmployeeCurrentNumberResponse {
+  new: number;
+  active: number;
+  resign: number;
+  month?: string;
+}
+
+export interface EmployeeStatusStatsResponse {
+  permanent: number;
+  probation: number;
+  contract: number;
+  internship: number;
+  freelance: number;
+  month?: string;
+}
+
+export interface AttendanceStatsResponse {
+  on_time: number;
+  late: number;
+  absent: number;
+  total: number;
+  on_time_percent: number;
+  late_percent: number;
+  absent_percent: number;
+  date?: string;
+}
+
+export interface MonthlyAttendanceResponse {
+  on_time: number;
+  late: number;
+  absent: number;
+  records: AttendanceRecordItem[];
+  month?: string;
+}
+
+export interface AttendanceRecordItem {
+  no: number;
+  employee_name: string;
+  status: string;
+  check_in?: string;
+}
+
+// Employee Dashboard Types
+export interface EmployeeDashboardData {
+  work_stats: WorkStatsResponse;
+  attendance_summary: AttendanceSummaryResponse;
+  leave_summary: LeaveSummaryResponse;
+  work_hours_chart: WorkHoursChartResponse;
+}
+
+export interface WorkStatsResponse {
+  work_hours: string;
+  work_minutes: number;
+  on_time_count: number;
+  late_count: number;
+  absent_count: number;
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface AttendanceSummaryResponse {
+  total_attendance: number;
+  on_time: number;
+  late: number;
+  absent: number;
+  leave_count: number;
+  on_time_percent: number;
+  late_percent: number;
+  absent_percent: number;
+  leave_percent: number;
+  leave_breakdown: LeaveBreakdownItem[];
+  month?: string;
+}
+
+export interface LeaveBreakdownItem {
+  leave_type_name: string;
+  count: number;
+  percent: number;
+}
+
+export interface LeaveSummaryResponse {
+  year: number;
+  leave_quota_detail: LeaveQuotaItem[];
+}
+
+export interface LeaveQuotaItem {
+  leave_type_id: string;
+  leave_type_name: string;
+  total_quota: number;
+  taken: number;
+  remaining: number;
+}
+
+export interface WorkHoursChartResponse {
+  total_work_hours: string;
+  total_work_minutes: number;
+  week_number: number;
+  year: number;
+  month: number;
+  daily_work_hours: DailyWorkHourItem[];
+}
+
+export interface DailyWorkHourItem {
+  date: string;
+  day_name: string;
+  work_hours: string;
+  work_minutes: number;
+}
+
+// Legacy interfaces for backward compatibility
 export interface DashboardData {
   total_employees: number;
   active_employees: number;
@@ -1072,7 +1422,7 @@ export const companyApi = {
 // ============================================
 
 export const employeeApi = {
-  list: async (filter?: EmployeeFilter): Promise<ApiResponse<EmployeeWithDetails[]>> => {
+  list: async (filter?: EmployeeFilter): Promise<ApiResponse<ListEmployeeResponse>> => {
     const params = new URLSearchParams();
     if (filter) {
       Object.entries(filter).forEach(([key, value]) => {
@@ -1081,7 +1431,7 @@ export const employeeApi = {
         }
       });
     }
-    return fetchWithAuth<EmployeeWithDetails[]>(`${API_URL}/employees?${params}`, {
+    return fetchWithAuth<ListEmployeeResponse>(`${API_URL}/employees?${params}`, {
       method: 'GET',
     });
   },
@@ -1422,114 +1772,6 @@ export const masterApi = {
 };
 
 // ============================================
-// Schedule API
-// ============================================
-
-export const scheduleApi = {
-  // Work Schedules
-  list: async (): Promise<ApiResponse<WorkSchedule[]>> => {
-    return fetchWithAuth<WorkSchedule[]>(`${API_URL}/schedule`, {
-      method: 'GET',
-    });
-  },
-
-  get: async (id: string): Promise<ApiResponse<WorkSchedule>> => {
-    return fetchWithAuth<WorkSchedule>(`${API_URL}/schedule/${id}`, {
-      method: 'GET',
-    });
-  },
-
-  create: async (data: Partial<WorkSchedule>): Promise<ApiResponse<WorkSchedule>> => {
-    return fetchWithAuth<WorkSchedule>(`${API_URL}/schedule`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  update: async (id: string, data: Partial<WorkSchedule>): Promise<ApiResponse<WorkSchedule>> => {
-    return fetchWithAuth<WorkSchedule>(`${API_URL}/schedule/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  delete: async (id: string): Promise<ApiResponse<null>> => {
-    return fetchWithAuth<null>(`${API_URL}/schedule/${id}`, {
-      method: 'DELETE',
-    });
-  },
-
-  // Assign schedule to employee
-  assignToEmployee: async (scheduleId: string, employeeId: string, data: { start_date: string; end_date?: string }): Promise<ApiResponse<EmployeeScheduleAssignment>> => {
-    return fetchWithAuth<EmployeeScheduleAssignment>(`${API_URL}/schedule/${scheduleId}/employee/${employeeId}`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  // Get employee schedule timeline
-  getEmployeeTimeline: async (employeeId: string): Promise<ApiResponse<EmployeeScheduleAssignment[]>> => {
-    return fetchWithAuth<EmployeeScheduleAssignment[]>(`${API_URL}/schedule/employee/${employeeId}`, {
-      method: 'GET',
-    });
-  },
-
-  // Schedule Times
-  getTime: async (id: string): Promise<ApiResponse<WorkScheduleTime>> => {
-    return fetchWithAuth<WorkScheduleTime>(`${API_URL}/schedule/times/${id}`, {
-      method: 'GET',
-    });
-  },
-
-  createTime: async (data: Partial<WorkScheduleTime>): Promise<ApiResponse<WorkScheduleTime>> => {
-    return fetchWithAuth<WorkScheduleTime>(`${API_URL}/schedule/times`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  updateTime: async (id: string, data: Partial<WorkScheduleTime>): Promise<ApiResponse<WorkScheduleTime>> => {
-    return fetchWithAuth<WorkScheduleTime>(`${API_URL}/schedule/times/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  deleteTime: async (id: string): Promise<ApiResponse<null>> => {
-    return fetchWithAuth<null>(`${API_URL}/schedule/times/${id}`, {
-      method: 'DELETE',
-    });
-  },
-
-  // Schedule Locations
-  getLocation: async (id: string): Promise<ApiResponse<WorkScheduleLocation>> => {
-    return fetchWithAuth<WorkScheduleLocation>(`${API_URL}/schedule/locations/${id}`, {
-      method: 'GET',
-    });
-  },
-
-  createLocation: async (data: Partial<WorkScheduleLocation>): Promise<ApiResponse<WorkScheduleLocation>> => {
-    return fetchWithAuth<WorkScheduleLocation>(`${API_URL}/schedule/locations`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  updateLocation: async (id: string, data: Partial<WorkScheduleLocation>): Promise<ApiResponse<WorkScheduleLocation>> => {
-    return fetchWithAuth<WorkScheduleLocation>(`${API_URL}/schedule/locations/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  deleteLocation: async (id: string): Promise<ApiResponse<null>> => {
-    return fetchWithAuth<null>(`${API_URL}/schedule/locations/${id}`, {
-      method: 'DELETE',
-    });
-  },
-};
-
-// ============================================
 // Employee Schedules API
 // ============================================
 
@@ -1579,68 +1821,107 @@ export const employeeSchedulesApi = {
 // ============================================
 
 export const attendanceApi = {
-  list: async (filter?: AttendanceFilter): Promise<ApiResponse<Attendance[]>> => {
+  // List all attendance (admin/manager)
+  list: async (filter?: AttendanceFilter): Promise<ApiResponse<ListAttendanceResponse>> => {
     const params = new URLSearchParams();
     if (filter) {
       Object.entries(filter).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
+        if (value !== undefined && value !== null && value !== '') {
           params.append(key, String(value));
         }
       });
     }
-    return fetchWithAuth<Attendance[]>(`${API_URL}/attendance?${params}`, {
+    return fetchWithAuth<ListAttendanceResponse>(`${API_URL}/attendance?${params}`, {
       method: 'GET',
     });
   },
 
+  // Get single attendance by ID
   get: async (id: string): Promise<ApiResponse<Attendance>> => {
     return fetchWithAuth<Attendance>(`${API_URL}/attendance/${id}`, {
       method: 'GET',
     });
   },
 
-  getMyAttendance: async (): Promise<ApiResponse<Attendance[]>> => {
-    return fetchWithAuth<Attendance[]>(`${API_URL}/attendance/my`, {
+  // Get my attendance records
+  getMyAttendance: async (filter?: AttendanceFilter): Promise<ApiResponse<ListAttendanceResponse>> => {
+    const params = new URLSearchParams();
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          params.append(key, String(value));
+        }
+      });
+    }
+    return fetchWithAuth<ListAttendanceResponse>(`${API_URL}/attendance/my?${params}`, {
       method: 'GET',
     });
   },
 
-  clockIn: async (data: ClockInRequest): Promise<ApiResponse<Attendance>> => {
-    return fetchWithAuth<Attendance>(`${API_URL}/attendance/clock-in`, {
+  // Clock in with photo proof (multipart/form-data)
+  clockIn: async (data: ClockInRequest, photo: File): Promise<ApiResponse<Attendance>> => {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(data));
+    formData.append('photo', photo);
+
+    const token = localStorage.getItem('access_token');
+    const response = await fetch(`${API_URL}/attendance/clock-in`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      credentials: 'include',
+      body: formData,
     });
+    return handleResponse<Attendance>(response);
   },
 
-  clockOut: async (data: ClockOutRequest): Promise<ApiResponse<Attendance>> => {
-    return fetchWithAuth<Attendance>(`${API_URL}/attendance/clock-out`, {
+  // Clock out with photo proof (multipart/form-data)
+  clockOut: async (data: ClockOutRequest, photo: File): Promise<ApiResponse<Attendance>> => {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(data));
+    formData.append('photo', photo);
+
+    const token = localStorage.getItem('access_token');
+    const response = await fetch(`${API_URL}/attendance/clock-out`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      credentials: 'include',
+      body: formData,
     });
+    return handleResponse<Attendance>(response);
   },
 
-  update: async (id: string, data: Partial<Attendance>): Promise<ApiResponse<Attendance>> => {
+  // Update attendance (admin/manager)
+  update: async (id: string, data: UpdateAttendanceRequest): Promise<ApiResponse<Attendance>> => {
     return fetchWithAuth<Attendance>(`${API_URL}/attendance/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
 
+  // Delete attendance (admin/manager)
   delete: async (id: string): Promise<ApiResponse<null>> => {
     return fetchWithAuth<null>(`${API_URL}/attendance/${id}`, {
       method: 'DELETE',
     });
   },
 
-  approve: async (id: string): Promise<ApiResponse<Attendance>> => {
+  // Approve attendance (admin/manager)
+  approve: async (id: string, notes?: string): Promise<ApiResponse<Attendance>> => {
     return fetchWithAuth<Attendance>(`${API_URL}/attendance/${id}/approve`, {
       method: 'POST',
+      body: JSON.stringify({ notes }),
     });
   },
 
-  reject: async (id: string): Promise<ApiResponse<Attendance>> => {
+  // Reject attendance (admin/manager)
+  reject: async (id: string, reason: string): Promise<ApiResponse<Attendance>> => {
     return fetchWithAuth<Attendance>(`${API_URL}/attendance/${id}/reject`, {
       method: 'POST',
+      body: JSON.stringify({ reason }),
     });
   },
 };
@@ -1650,22 +1931,178 @@ export const attendanceApi = {
 // ============================================
 
 export const invitationApi = {
-  getByToken: async (token: string): Promise<ApiResponse<Invitation>> => {
+  // Public endpoint - Get invitation details by token
+  getByToken: async (token: string): Promise<ApiResponse<InvitationDetail>> => {
     const response = await fetch(`${API_URL}/invitations/view/${token}`, {
       method: 'GET',
     });
-    return handleResponse<Invitation>(response);
+    return handleResponse<InvitationDetail>(response);
   },
 
-  listMyInvitations: async (): Promise<ApiResponse<Invitation[]>> => {
-    return fetchWithAuth<Invitation[]>(`${API_URL}/invitations/my`, {
+  // Authenticated - List pending invitations for current user
+  listMyInvitations: async (): Promise<ApiResponse<MyInvitation[]>> => {
+    return fetchWithAuth<MyInvitation[]>(`${API_URL}/invitations/my`, {
       method: 'GET',
     });
   },
 
-  accept: async (token: string): Promise<ApiResponse<null>> => {
-    return fetchWithAuth<null>(`${API_URL}/invitations/${token}/accept`, {
+  // Authenticated - Accept an invitation
+  accept: async (token: string): Promise<ApiResponse<AcceptInvitationResponse>> => {
+    return fetchWithAuth<AcceptInvitationResponse>(`${API_URL}/invitations/${token}/accept`, {
       method: 'POST',
+    });
+  },
+};
+
+// ============================================
+// Schedule API
+// ============================================
+
+export const scheduleApi = {
+  // Work Schedules
+  list: async (filter?: WorkScheduleFilter): Promise<ApiResponse<ListWorkScheduleResponse>> => {
+    const params = new URLSearchParams();
+    if (filter) {
+      if (filter.name) params.append('name', filter.name);
+      if (filter.type) params.append('type', filter.type);
+      if (filter.page) params.append('page', String(filter.page));
+      if (filter.limit) params.append('limit', String(filter.limit));
+      if (filter.sort_by) params.append('sort_by', filter.sort_by);
+      if (filter.sort_order) params.append('sort_order', filter.sort_order);
+    }
+    return fetchWithAuth<ListWorkScheduleResponse>(`${API_URL}/schedule?${params}`, {
+      method: 'GET',
+    });
+  },
+
+  get: async (id: string): Promise<ApiResponse<WorkSchedule>> => {
+    return fetchWithAuth<WorkSchedule>(`${API_URL}/schedule/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  create: async (data: CreateWorkScheduleRequest): Promise<ApiResponse<WorkSchedule>> => {
+    return fetchWithAuth<WorkSchedule>(`${API_URL}/schedule`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async (id: string, data: UpdateWorkScheduleRequest): Promise<ApiResponse<null>> => {
+    return fetchWithAuth<null>(`${API_URL}/schedule/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (id: string): Promise<ApiResponse<null>> => {
+    return fetchWithAuth<null>(`${API_URL}/schedule/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Work Schedule Times
+  createTime: async (data: CreateWorkScheduleTimeRequest): Promise<ApiResponse<WorkScheduleTime>> => {
+    return fetchWithAuth<WorkScheduleTime>(`${API_URL}/schedule/times`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getTime: async (id: string): Promise<ApiResponse<WorkScheduleTime>> => {
+    return fetchWithAuth<WorkScheduleTime>(`${API_URL}/schedule/times/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  updateTime: async (id: string, data: UpdateWorkScheduleTimeRequest): Promise<ApiResponse<null>> => {
+    return fetchWithAuth<null>(`${API_URL}/schedule/times/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteTime: async (id: string): Promise<ApiResponse<null>> => {
+    return fetchWithAuth<null>(`${API_URL}/schedule/times/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Work Schedule Locations
+  createLocation: async (data: CreateWorkScheduleLocationRequest): Promise<ApiResponse<WorkScheduleLocation>> => {
+    return fetchWithAuth<WorkScheduleLocation>(`${API_URL}/schedule/locations`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getLocation: async (id: string): Promise<ApiResponse<WorkScheduleLocation>> => {
+    return fetchWithAuth<WorkScheduleLocation>(`${API_URL}/schedule/locations/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  updateLocation: async (id: string, data: UpdateWorkScheduleLocationRequest): Promise<ApiResponse<null>> => {
+    return fetchWithAuth<null>(`${API_URL}/schedule/locations/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteLocation: async (id: string): Promise<ApiResponse<null>> => {
+    return fetchWithAuth<null>(`${API_URL}/schedule/locations/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Employee Schedule Assignments
+  assignToEmployee: async (scheduleId: string, employeeId: string, data: AssignScheduleRequest): Promise<ApiResponse<EmployeeScheduleAssignment>> => {
+    return fetchWithAuth<EmployeeScheduleAssignment>(`${API_URL}/schedule/${scheduleId}/employee/${employeeId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  listEmployeeAssignments: async (employeeId: string): Promise<ApiResponse<EmployeeScheduleAssignment[]>> => {
+    return fetchWithAuth<EmployeeScheduleAssignment[]>(`${API_URL}/employee-schedules?employee_id=${employeeId}`, {
+      method: 'GET',
+    });
+  },
+
+  getEmployeeAssignment: async (id: string): Promise<ApiResponse<EmployeeScheduleAssignment>> => {
+    return fetchWithAuth<EmployeeScheduleAssignment>(`${API_URL}/employee-schedules/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  updateEmployeeAssignment: async (assignId: string, employeeId: string, data: UpdateEmployeeScheduleAssignmentRequest): Promise<ApiResponse<null>> => {
+    return fetchWithAuth<null>(`${API_URL}/schedule/${assignId}/employee/${employeeId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteEmployeeAssignment: async (assignId: string, employeeId: string): Promise<ApiResponse<null>> => {
+    return fetchWithAuth<null>(`${API_URL}/schedule/${assignId}/employee/${employeeId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  getActiveSchedule: async (employeeId: string, date?: string): Promise<ApiResponse<ActiveScheduleResponse>> => {
+    const params = new URLSearchParams();
+    params.append('employee_id', employeeId);
+    if (date) params.append('date', date);
+    return fetchWithAuth<ActiveScheduleResponse>(`${API_URL}/employee-schedules/active?${params}`, {
+      method: 'GET',
+    });
+  },
+
+  getEmployeeTimeline: async (employeeId: string, page?: number, limit?: number): Promise<ApiResponse<EmployeeScheduleTimeline>> => {
+    const params = new URLSearchParams();
+    if (page) params.append('page', String(page));
+    if (limit) params.append('limit', String(limit));
+    return fetchWithAuth<EmployeeScheduleTimeline>(`${API_URL}/schedule/employee/${employeeId}?${params}`, {
+      method: 'GET',
     });
   },
 };
@@ -1816,6 +2253,113 @@ export const payrollApi = {
 // Dashboard API
 // ============================================
 
+// Admin Dashboard API
+export const adminDashboardApi = {
+  getDashboard: async (): Promise<ApiResponse<AdminDashboardData>> => {
+    return fetchWithAuth<AdminDashboardData>(`${API_URL}/dashboard/admin`, {
+      method: 'GET',
+    });
+  },
+
+  getEmployeeCurrentNumber: async (month?: string): Promise<ApiResponse<EmployeeCurrentNumberResponse>> => {
+    const params = new URLSearchParams();
+    if (month) params.append('month', month);
+    const queryString = params.toString();
+    return fetchWithAuth<EmployeeCurrentNumberResponse>(
+      `${API_URL}/dashboard/admin/employee-current-number${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' }
+    );
+  },
+
+  getEmployeeStatusStats: async (month?: string): Promise<ApiResponse<EmployeeStatusStatsResponse>> => {
+    const params = new URLSearchParams();
+    if (month) params.append('month', month);
+    const queryString = params.toString();
+    return fetchWithAuth<EmployeeStatusStatsResponse>(
+      `${API_URL}/dashboard/admin/employee-status-stats${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' }
+    );
+  },
+
+  getMonthlyAttendance: async (month?: string): Promise<ApiResponse<MonthlyAttendanceResponse>> => {
+    const params = new URLSearchParams();
+    if (month) params.append('month', month);
+    const queryString = params.toString();
+    return fetchWithAuth<MonthlyAttendanceResponse>(
+      `${API_URL}/dashboard/admin/monthly-attendance${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' }
+    );
+  },
+
+  getDailyAttendanceStats: async (date?: string): Promise<ApiResponse<AttendanceStatsResponse>> => {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    const queryString = params.toString();
+    return fetchWithAuth<AttendanceStatsResponse>(
+      `${API_URL}/dashboard/admin/daily-attendance-stats${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' }
+    );
+  },
+};
+
+// Employee Dashboard API
+export const employeeDashboardApi = {
+  getDashboard: async (startDate?: string, endDate?: string): Promise<ApiResponse<EmployeeDashboardData>> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    const queryString = params.toString();
+    return fetchWithAuth<EmployeeDashboardData>(
+      `${API_URL}/dashboard/employee${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' }
+    );
+  },
+
+  getWorkStats: async (startDate?: string, endDate?: string): Promise<ApiResponse<WorkStatsResponse>> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    const queryString = params.toString();
+    return fetchWithAuth<WorkStatsResponse>(
+      `${API_URL}/dashboard/employee/work-stats${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' }
+    );
+  },
+
+  getAttendanceSummary: async (month?: string): Promise<ApiResponse<AttendanceSummaryResponse>> => {
+    const params = new URLSearchParams();
+    if (month) params.append('month', month);
+    const queryString = params.toString();
+    return fetchWithAuth<AttendanceSummaryResponse>(
+      `${API_URL}/dashboard/employee/attendance-summary${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' }
+    );
+  },
+
+  getLeaveSummary: async (year?: number): Promise<ApiResponse<LeaveSummaryResponse>> => {
+    const params = new URLSearchParams();
+    if (year) params.append('year', String(year));
+    const queryString = params.toString();
+    return fetchWithAuth<LeaveSummaryResponse>(
+      `${API_URL}/dashboard/employee/leave-summary${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' }
+    );
+  },
+
+  getWorkHoursChart: async (year?: number, month?: number, week?: number): Promise<ApiResponse<WorkHoursChartResponse>> => {
+    const params = new URLSearchParams();
+    if (year) params.append('year', String(year));
+    if (month) params.append('month', String(month));
+    if (week) params.append('week', String(week));
+    const queryString = params.toString();
+    return fetchWithAuth<WorkHoursChartResponse>(
+      `${API_URL}/dashboard/employee/work-hours-chart${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' }
+    );
+  },
+};
+
+// Legacy Dashboard API (for backward compatibility)
 export const dashboardApi = {
   getDashboard: async (): Promise<ApiResponse<DashboardData>> => {
     return fetchWithAuth<DashboardData>(`${API_URL}/dashboard`, {

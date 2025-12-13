@@ -1,55 +1,182 @@
+'use client';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import CrudManager from "@/components/settings/CrudManager";
-
-// Data fiktif untuk setiap kategori
-const initialData = {
-    jabatan: [{ id: 1, name: "Software Engineer" }, { id: 2, name: "UI/UX Designer" }],
-    tipeKontrak: [{ id: 1, name: "Permanent" }, { id: 2, name: "Contract" }],
-    cabang: [{ id: 1, name: "Jakarta Head Office" }, { id: 2, name: "Surabaya Branch" }],
-    grade: [{ id: 1, name: "Junior" }, { id: 2, name: "Senior" }],
-    tipeSp: [{ id: 1, name: "SP-1" }, { id: 2, name: "SP-2" }],
-    leave: [{ id: 1, name: "Annual Leave" }, { id: 2, name: "Sick Leave" }],
-};
+import CrudManager, { MasterDataItem } from "@/components/settings/CrudManager";
+import { masterApi, ApiResponse, Branch, Grade, Position } from "@/lib/api";
 
 export default function CompanySettingsPage() {
+    // Branch API handlers
+    const fetchBranches = async (): Promise<ApiResponse<MasterDataItem[]>> => {
+        const response = await masterApi.listBranches();
+        return {
+            ...response,
+            data: response.data?.map((item: Branch) => ({
+                id: item.id,
+                name: item.name,
+                address: item.address,
+                timezone: item.timezone,
+            })),
+        };
+    };
+
+    const createBranch = async (data: { name: string; address?: string; timezone?: string }) => {
+        const response = await masterApi.createBranch(data);
+        return {
+            ...response,
+            data: response.data ? {
+                id: response.data.id,
+                name: response.data.name,
+                address: response.data.address,
+                timezone: response.data.timezone,
+            } : undefined,
+        };
+    };
+
+    const updateBranch = async (id: string, data: { name: string; address?: string; timezone?: string }) => {
+        const response = await masterApi.updateBranch(id, data);
+        return {
+            ...response,
+            data: response.data ? {
+                id: response.data.id,
+                name: response.data.name,
+                address: response.data.address,
+                timezone: response.data.timezone,
+            } : undefined,
+        };
+    };
+
+    const deleteBranch = async (id: string) => {
+        return masterApi.deleteBranch(id);
+    };
+
+    // Grade API handlers
+    const fetchGrades = async (): Promise<ApiResponse<MasterDataItem[]>> => {
+        const response = await masterApi.listGrades();
+        return {
+            ...response,
+            data: response.data?.map((item: Grade) => ({
+                id: item.id,
+                name: item.name,
+            })),
+        };
+    };
+
+    const createGrade = async (data: { name: string }) => {
+        const response = await masterApi.createGrade(data);
+        return {
+            ...response,
+            data: response.data ? {
+                id: response.data.id,
+                name: response.data.name,
+            } : undefined,
+        };
+    };
+
+    const updateGrade = async (id: string, data: { name: string }) => {
+        const response = await masterApi.updateGrade(id, data);
+        return {
+            ...response,
+            data: response.data ? {
+                id: response.data.id,
+                name: response.data.name,
+            } : undefined,
+        };
+    };
+
+    const deleteGrade = async (id: string) => {
+        return masterApi.deleteGrade(id);
+    };
+
+    // Position API handlers
+    const fetchPositions = async (): Promise<ApiResponse<MasterDataItem[]>> => {
+        const response = await masterApi.listPositions();
+        return {
+            ...response,
+            data: response.data?.map((item: Position) => ({
+                id: item.id,
+                name: item.name,
+            })),
+        };
+    };
+
+    const createPosition = async (data: { name: string }) => {
+        const response = await masterApi.createPosition(data);
+        return {
+            ...response,
+            data: response.data ? {
+                id: response.data.id,
+                name: response.data.name,
+            } : undefined,
+        };
+    };
+
+    const updatePosition = async (id: string, data: { name: string }) => {
+        const response = await masterApi.updatePosition(id, data);
+        return {
+            ...response,
+            data: response.data ? {
+                id: response.data.id,
+                name: response.data.name,
+            } : undefined,
+        };
+    };
+
+    const deletePosition = async (id: string) => {
+        return masterApi.deletePosition(id);
+    };
+
     return (
         <div className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Company Settings</CardTitle>
                     <CardDescription>
-                        Manage master data used across the application, such as job positions, branches, and contract types.
+                        Manage master data used across the application, such as job positions, branches, and grades.
                     </CardDescription>
                 </CardHeader>   
             </Card>
 
-            <Tabs defaultValue="jabatan" className="w-full">
-                <TabsList className="grid w-full grid-cols-6">
-                    <TabsTrigger value="jabatan">Position</TabsTrigger>
-                    <TabsTrigger value="tipeKontrak">Contract Type</TabsTrigger>
-                    <TabsTrigger value="cabang">Branch</TabsTrigger>
+            <Tabs defaultValue="position" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="position">Position</TabsTrigger>
                     <TabsTrigger value="grade">Grade</TabsTrigger>
-                    <TabsTrigger value="tipeSp">SP Type</TabsTrigger>
-                    <TabsTrigger value="leave">Leave</TabsTrigger>
+                    <TabsTrigger value="branch">Branch</TabsTrigger>
                 </TabsList>
-                <TabsContent value="jabatan">
-                    <CrudManager title="Jabatan (Positions)" description="Manage job positions in your company." initialData={initialData.jabatan} />
+                <TabsContent value="position">
+                    <CrudManager 
+                        title="Position" 
+                        description="Manage job positions in your company." 
+                        type="position"
+                        fetchData={fetchPositions}
+                        createItem={createPosition}
+                        updateItem={updatePosition}
+                        deleteItem={deletePosition}
+                    />
                 </TabsContent>
-                <TabsContent value="tipeKontrak">
-                     <CrudManager title="Tipe Kontrak (Contract Types)" description="Manage employee contract types." initialData={initialData.tipeKontrak} />
+                <TabsContent value="grade">
+                    <CrudManager 
+                        title="Grade" 
+                        description="Manage employee grade levels." 
+                        type="grade"
+                        fetchData={fetchGrades}
+                        createItem={createGrade}
+                        updateItem={updateGrade}
+                        deleteItem={deleteGrade}
+                    />
                 </TabsContent>
-                 <TabsContent value="cabang">
-                    <CrudManager title="Cabang (Branches)" description="Manage your company's branches." initialData={initialData.cabang} />
-                </TabsContent>
-                 <TabsContent value="grade">
-                    <CrudManager title="Grade" description="Manage employee grade levels." initialData={initialData.grade} />
-                </TabsContent>
-                <TabsContent value="tipeSp">
-                     <CrudManager title="Tipe SP (Disciplinary Warning Types)" description="Manage types of disciplinary warnings." initialData={initialData.tipeSp} />
-                </TabsContent>
-                 <TabsContent value="leave">
-                     <CrudManager title="Leave" description="Manage leave types." initialData={initialData.leave} />
+                <TabsContent value="branch">
+                    <CrudManager 
+                        title="Branch" 
+                        description="Manage your company's branches." 
+                        type="branch"
+                        fetchData={fetchBranches}
+                        createItem={createBranch}
+                        updateItem={updateBranch}
+                        deleteItem={deleteBranch}
+                        showAddress={true}
+                        showTimezone={true}
+                    />
                 </TabsContent>
             </Tabs>
         </div>

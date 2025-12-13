@@ -6,23 +6,35 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import { cn } from "@/lib/utils";
+import { Loader2 } from 'lucide-react';
 
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const { user } = useAuth();
+    const { user, isLoading, isAuthenticated } = useAuth();
     const router = useRouter();
     const [isSidebarOpen, setSidebarOpen] = useState(true);
 
     useEffect(() => {
-        if (!user) {
+        // Only redirect if not loading and not authenticated
+        if (!isLoading && !isAuthenticated) {
             router.push('/auth');
         }
-    }, [user, router]);
+    }, [isLoading, isAuthenticated, router]);
     
-    if (!user) {
+    // Show loading while checking auth
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
+    // Don't render if not authenticated
+    if (!isAuthenticated || !user) {
         return null; 
     }
 

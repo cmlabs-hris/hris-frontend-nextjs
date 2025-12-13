@@ -1,47 +1,171 @@
 'use client'
 
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Loader2, Users, UserPlus, UserCheck, UserX } from 'lucide-react';
+import { 
+    adminDashboardApi, 
+    AdminDashboardData,
+    EmployeeCurrentNumberResponse,
+    EmployeeStatusStatsResponse,
+    AttendanceStatsResponse,
+    MonthlyAttendanceResponse
+} from '@/lib/api';
 
-// --- Data Simulasi ---
+// Colors for charts
+const ATTENDANCE_COLORS = {
+    on_time: '#22c55e',
+    late: '#f59e0b',
+    absent: '#ef4444',
+};
 
-const barChartData = [
-  { name: 'New', value: 18 },
-  { name: 'Active', value: 33 },
-  { name: 'Resign', value: 10 },
-];
-
-const horizontalBarData = [
-    { name: 'Magang', value: 37 },
-    { name: 'PKWT (Kontrak)', value: 22 },
-    { name: 'Tetap Percobaan', value: 26 },
-    { name: 'Tetap Permanen', value: 17 },
-];
-
-const attendanceData = [
-    { name: 'Ontime', value: 145, color: '#22c55e' }, 
-    { name: 'Late', value: 23, color: '#f59e0b' },   
-    { name: 'Sick', value: 8, color: '#ef4444' },   
-];
-const totalAttendance = attendanceData.reduce((acc, curr) => acc + curr.value, 0);
-const ontimePercentage = Math.round((attendanceData.find(d => d.name === 'Ontime')?.value || 0) / totalAttendance * 100);
-
-
-const recentAttendance = [
-    { no: 1, nama: 'Angga', status: 'On Time', checkIn: '08:30' },
-    { no: 2, nama: 'Resi', status: 'Sick', checkIn: '-' },
-    { no: 3, nama: 'Imanuel', status: 'Late', checkIn: '09:05' },
-    { no: 4, nama: 'Hafiz', status: 'On Time', checkIn: '08:30' },
-    { no: 5, nama: 'Farrel', status: 'On Time', checkIn: '08:30' },
-];
-
+const EMPLOYEE_STATUS_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00C49F'];
 
 export default function AdminDashboard() {
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null);
+    const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    });
+
+    const loadDashboardData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await adminDashboardApi.getDashboard();
+            if (response.success && response.data) {
+                setDashboardData(response.data);
+            } else {
+                setError(response.error?.message || 'Failed to load dashboard data');
+            }
+        } catch (err) {
+            setError('Failed to load dashboard data. Please try again.');
+            console.error('Dashboard error:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadDashboardData();
+    }, [loadDashboardData]);
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+                <p className="text-red-500">{error}</p>
+                <button 
+                    onClick={loadDashboardData}
+                    className="text-blue-500 hover:underline"
+                >
+                    Try again
+                </button>
+            </div>
+        );
+    }
+
+    if (!dashboardData) {
+        return null;
+    }
+
+    const { employee_summary, employee_current_number, employee_status_stats, attendance_stats, monthly_attendance } = dashboardData;
+
+    // Prepare bar chart data for employee current number
+    const barChartData = [
+        { name: 'New', value: employee_current_number.new },
+        { name: 'Active', value: employee_current_number.active },
+        { name: 'Resign', value: employee_current_number.resign },
+    ];
+
+    // Prepare horizontal bar chart data for employee status
+    const horizontalBarData = [
+        { name: 'Permanent', value: employee_status_stats.permanent },
+        { name: 'Probation', value: employee_status_stats.probation },
+        { name: 'Contract', value: employee_status_stats.contract },
+        { name: 'Internship', value: employee_status_stats.internship },
+        { name: 'Freelance', value: employee_status_stats.freelance },
+    ].filter(item => item.value > 0);
+
+    // Prepare pie chart data for attendance
+    const attendanceData = [
+        { name: 'On Time', value: attendance_stats.on_time, color: ATTENDANCE_COLORS.on_time },
+        { name: 'Late', value: attendance_stats.late, color: ATTENDANCE_COLORS.late },
+        { name: 'Absent', value: attendance_stats.absent, color: ATTENDANCE_COLORS.absent },
+    ];
+    const totalAttendance = attendance_stats.total || (attendance_stats.on_time + attendance_stats.late + attendance_stats.absent);
+    const ontimePercentage = totalAttendance > 0 ? Math.round(attendance_stats.on_time_percent) : 0;
+
+    // Get status badge variant
+    const getStatusBadge = (status: string) => {
+        const statusLower = status.toLowerCase();
+        if (statusLower === 'late') return 'destructive';
+        if (statusLower === 'absent') return 'secondary';
+        return 'default';
+    };
+
+    const getStatusClass = (status: string) => {
+        const statusLower = status.toLowerCase();
+        if (statusLower === 'on_time') return 'bg-green-500';
+        return '';
+    };
+
     return (
         <div className="grid gap-6">
+            {/* Summary Cards */}
+            <div className="grid md:grid-cols-4 gap-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{employee_summary.total_employee}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">New Employees</CardTitle>
+                        <UserPlus className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{employee_summary.new_employee}</div>
+                        <p className="text-xs text-muted-foreground">Last 30 days</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Active Employees</CardTitle>
+                        <UserCheck className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-green-600">{employee_summary.active_employee}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Resigned</CardTitle>
+                        <UserX className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-red-600">{employee_summary.resigned_employee}</div>
+                    </CardContent>
+                </Card>
+            </div>
+
             {/* Employee Statistics Charts */}
             <div className="grid md:grid-cols-2 gap-6">
                 <Card>
@@ -67,25 +191,32 @@ export default function AdminDashboard() {
                         <CardDescription>Current Number of Employees by Status</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ResponsiveContainer width="100%" height={250}>
-                             <BarChart data={horizontalBarData} layout="vertical" margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false}/>
-                                <XAxis type="number" />
-                                <YAxis type="category" dataKey="name" width={100} tickLine={false} axisLine={false} />
-                                <Tooltip />
-                                <Bar dataKey="value" fill="#82ca9d" radius={[0, 4, 4, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        {horizontalBarData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={250}>
+                                <BarChart data={horizontalBarData} layout="vertical" margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false}/>
+                                    <XAxis type="number" />
+                                    <YAxis type="category" dataKey="name" width={100} tickLine={false} axisLine={false} />
+                                    <Tooltip />
+                                    <Bar dataKey="value" fill="#82ca9d" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                                No employee data available
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
+
             {/* Attendance Statistics */}
-             <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>Statistics Attendance</CardTitle>
+                        <CardDescription>Today&apos;s Attendance Overview</CardDescription>
                     </CardHeader>
-                    {/* --- PERUBAHAN TATA LETAK KEMBALI KE AWAL --- */}
                     <CardContent className="flex flex-col items-center justify-center gap-4 pt-4">
                         <div className="relative w-52 h-52">
                              <ResponsiveContainer width="100%" height="100%">
@@ -125,44 +256,50 @@ export default function AdminDashboard() {
                         </div>
                     </CardContent>
                 </Card>
-                 <Card>
+                <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle>Attendance</CardTitle>
-                         <Select defaultValue="this-month">
+                        <CardTitle>Recent Attendance</CardTitle>
+                        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                             <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="this-month">This Month</SelectItem>
-                                <SelectItem value="last-month">Last Month</SelectItem>
+                                <SelectItem value={selectedMonth}>This Month</SelectItem>
                             </SelectContent>
                         </Select>
                     </CardHeader>
-                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>No</TableHead>
-                                    <TableHead>Nama</TableHead>
-                                    <TableHead>Status Kehadiran</TableHead>
-                                    <TableHead>Check In</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {recentAttendance.map(att => (
-                                    <TableRow key={att.no}>
-                                        <TableCell>{att.no}</TableCell>
-                                        <TableCell>{att.nama}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={att.status === 'Late' ? 'destructive' : att.status === 'Sick' ? 'secondary' : 'default'}
-                                            className={att.status === 'On Time' ? 'bg-green-500' : ''}
-                                            >
-                                                {att.status}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{att.checkIn}</TableCell>
+                    <CardContent>
+                        {monthly_attendance.records && monthly_attendance.records.length > 0 ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>No</TableHead>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Check In</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {monthly_attendance.records.map((record) => (
+                                        <TableRow key={record.no}>
+                                            <TableCell>{record.no}</TableCell>
+                                            <TableCell>{record.employee_name}</TableCell>
+                                            <TableCell>
+                                                <Badge 
+                                                    variant={getStatusBadge(record.status)}
+                                                    className={getStatusClass(record.status)}
+                                                >
+                                                    {record.status.replace('_', ' ')}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>{record.check_in || '-'}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                                No attendance records
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
