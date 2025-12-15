@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Edit, Trash2, Eye, Briefcase, Building, FileBadge, Star, CalendarDays, FileText, Users, CalendarIcon, Mail, Phone, MapPin, GraduationCap, CreditCard } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Eye, Briefcase, Building, FileBadge, Star, CalendarDays, FileText, Users, CalendarIcon, Mail, Phone, MapPin, GraduationCap, CreditCard, UserX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -35,6 +35,7 @@ interface EmployeeTableProps {
     branches: Branch[];
     onUpdateEmployee: (id: string, data: UpdateEmployeeRequest) => Promise<void>;
     onDeleteEmployee: (id: string) => Promise<void>;
+    onInactivateEmployee?: (id: string, resignationDate: string) => Promise<void>;
 }
 
 // Detail Row Component
@@ -313,10 +314,13 @@ const EditEmployeeDialog = ({ employee, positions, grades, branches, onUpdate, c
 };
 
 // Main Component
-export default function EmployeeTable({ employees, positions, grades, branches, onUpdateEmployee, onDeleteEmployee }: EmployeeTableProps) {
+export default function EmployeeTable({ employees, positions, grades, branches, onUpdateEmployee, onDeleteEmployee, onInactivateEmployee }: EmployeeTableProps) {
     const [currentPage, setCurrentPage] = useState(1);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [inactivateEmployee, setInactivateEmployee] = useState<EmployeeWithDetails | null>(null);
+    const [resignationDate, setResignationDate] = useState<Date | undefined>(undefined);
+    const [isInactivating, setIsInactivating] = useState(false);
     const itemsPerPage = 10;
 
     // Ensure employees is always an array
@@ -335,6 +339,18 @@ export default function EmployeeTable({ employees, positions, grades, branches, 
         } finally {
             setIsDeleting(false);
             setDeleteId(null);
+        }
+    };
+
+    const handleInactivate = async () => {
+        if (!inactivateEmployee || !resignationDate || !onInactivateEmployee) return;
+        setIsInactivating(true);
+        try {
+            await onInactivateEmployee(inactivateEmployee.id, format(resignationDate, 'yyyy-MM-dd'));
+            setInactivateEmployee(null);
+            setResignationDate(undefined);
+        } finally {
+            setIsInactivating(false);
         }
     };
 
@@ -425,6 +441,14 @@ export default function EmployeeTable({ employees, positions, grades, branches, 
                                                     <Edit className="mr-2 h-4 w-4" /> Edit
                                                 </DropdownMenuItem>
                                             </EditEmployeeDialog>
+                                            {employee.employment_status === 'active' && onInactivateEmployee && (
+                                                <DropdownMenuItem 
+                                                    className="text-orange-600"
+                                                    onSelect={() => setInactivateEmployee(employee)}
+                                                >
+                                                    <UserX className="mr-2 h-4 w-4" /> Deactivate
+                                                </DropdownMenuItem>
+                                            )}
                                             <DropdownMenuItem 
                                                 className="text-red-600"
                                                 onSelect={() => setDeleteId(employee.id)}
@@ -490,6 +514,58 @@ export default function EmployeeTable({ employees, positions, grades, branches, 
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Inactivate Employee Dialog */}
+            <Dialog open={!!inactivateEmployee} onOpenChange={(open) => { if (!open) { setInactivateEmployee(null); setResignationDate(undefined); } }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Deactivate Employee</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Are you sure you want to deactivate <span className="font-semibold">{inactivateEmployee?.full_name}</span>? 
+                            This will mark them as inactive and set their resignation date.
+                        </p>
+                        <div className="grid gap-2">
+                            <Label htmlFor="resignation-date">Resignation Date *</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            "w-full justify-start text-left font-normal",
+                                            !resignationDate && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {resignationDate ? format(resignationDate, "PPP") : "Select date"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={resignationDate}
+                                        onSelect={setResignationDate}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => { setInactivateEmployee(null); setResignationDate(undefined); }}>
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleInactivate} 
+                            disabled={isInactivating || !resignationDate}
+                            className="bg-orange-600 hover:bg-orange-700"
+                        >
+                            {isInactivating ? 'Deactivating...' : 'Deactivate'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

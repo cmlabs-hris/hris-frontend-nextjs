@@ -21,6 +21,8 @@ const navItems = [
     { href: "/schedule", icon: CalendarClock, label: "SCHEDULE", roles: ['owner', 'manager'] },
     { href: "/payroll", icon: Banknote, label: "PAYROLL", roles: ['owner', 'manager'] },
     { href: "/attendance", icon: Calendar, label: "ATTENDANCE", roles: ['employee'] },
+    { href: "/my-attendance", icon: Clock, label: "MY ATTENDANCE", roles: ['employee'] },
+    { href: "/my-leave", icon: Plane, label: "MY LEAVE", roles: ['employee'] },
     { href: "/leave", icon: Plane, label: "LEAVE MANAGEMENT", roles: ['owner', 'manager'] },
     { href: "/company-settings", icon: Building2, label: "COMPANY SETTINGS", roles: ['owner'] },
     { href: "/reports", icon: FileText, label: "REPORTS", roles: ['owner', 'manager'] },

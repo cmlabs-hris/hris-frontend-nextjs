@@ -269,7 +269,7 @@ export default function UserDashboard() {
                                 </p>
                                 <p className="text-2xl font-bold">{totalLeaveQuota} Days</p>
                             </div>
-                            <Link href="/leave" className="text-xs text-blue-600 flex items-center hover:underline">
+                            <Link href="/my-leave" className="text-xs text-blue-600 flex items-center hover:underline">
                                 Request Leave <ArrowRight className="h-3 w-3 ml-1" />
                             </Link>
                         </div>

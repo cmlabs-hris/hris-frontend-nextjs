@@ -349,6 +349,32 @@ export default function EmployeePage() {
         }
     };
 
+    // Inactivate Employee
+    const handleInactivateEmployee = async (id: string, resignationDate: string) => {
+        try {
+            await employeeApi.inactivate(id, resignationDate);
+            toast({
+                title: "Success",
+                description: "Employee deactivated successfully",
+            });
+            await loadEmployees();
+        } catch (err) {
+            if (err instanceof ApiError) {
+                toast({
+                    title: "Error",
+                    description: err.errorDetail.message,
+                    variant: "destructive",
+                });
+            } else {
+                toast({
+                    title: "Error",
+                    description: "Failed to deactivate employee",
+                    variant: "destructive",
+                });
+            }
+        }
+    };
+
     // Download PDF
     const handleDownloadPDF = () => {
         const doc = new jsPDF();
@@ -459,6 +485,7 @@ export default function EmployeePage() {
                             branches={branches}
                             onUpdateEmployee={handleUpdateEmployee}
                             onDeleteEmployee={handleDeleteEmployee}
+                            onInactivateEmployee={handleInactivateEmployee}
                         />
                     )}
                 </CardContent>

@@ -111,9 +111,9 @@ export interface AccessTokenResponse {
 
 export interface Company {
   id: string;
-  name: string;
-  username: string;
-  address?: string;
+  company_name: string;
+  company_username: string;
+  company_address?: string;
   logo_url?: string;
   created_at: string;
   updated_at: string;
@@ -127,9 +127,8 @@ export interface CreateCompanyRequest {
 }
 
 export interface UpdateCompanyRequest {
-  name?: string;
-  address?: string;
-  logo_url?: string;
+  company_name?: string;
+  company_address?: string;
 }
 
 // ============================================
@@ -1392,7 +1391,10 @@ export const companyApi = {
   update: async (data: UpdateCompanyRequest): Promise<ApiResponse<Company>> => {
     return fetchWithAuth<Company>(`${API_URL}/company/my`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        company_name: data.company_name,
+        company_address: data.company_address,
+      }),
     });
   },
 
@@ -1404,7 +1406,7 @@ export const companyApi = {
 
   uploadLogo: async (file: File): Promise<ApiResponse<{ logo_url: string }>> => {
     const formData = new FormData();
-    formData.append('logo', file);
+    formData.append('attachment', file);
 
     const token = getAccessToken();
     const response = await fetch(`${API_URL}/company/my/logo`, {
@@ -2391,6 +2393,100 @@ export const dashboardApi = {
   getDailyAttendanceStats: async (): Promise<ApiResponse<DailyAttendanceStats>> => {
     return fetchWithAuth<DailyAttendanceStats>(`${API_URL}/dashboard/daily-attendance-stats`, {
       method: 'GET',
+    });
+  },
+};
+
+// ============================================
+// Notification DTOs
+// ============================================
+
+export type NotificationType = 
+  | 'leave_request' 
+  | 'leave_approved' 
+  | 'leave_rejected' 
+  | 'attendance_reminder'
+  | 'attendance_approved'
+  | 'attendance_rejected'
+  | 'payroll_generated'
+  | 'invitation'
+  | 'general';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data?: Record<string, unknown>;
+  is_read: boolean;
+  read_at?: string;
+  created_at: string;
+}
+
+export interface NotificationListResponse {
+  notifications: Notification[];
+  total: number;
+  unread_count: number;
+  page: number;
+  page_size: number;
+}
+
+export interface NotificationPreference {
+  notification_type: NotificationType;
+  email_enabled: boolean;
+  push_enabled: boolean;
+}
+
+// ============================================
+// Notification API
+// ============================================
+
+export const notificationApi = {
+  list: async (page: number = 1, pageSize: number = 20, unreadOnly: boolean = false): Promise<ApiResponse<NotificationListResponse>> => {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('page_size', String(pageSize));
+    if (unreadOnly) params.append('unread_only', 'true');
+    return fetchWithAuth<NotificationListResponse>(`${API_URL}/notifications?${params}`, {
+      method: 'GET',
+    });
+  },
+
+  getUnreadCount: async (): Promise<ApiResponse<{ unread_count: number }>> => {
+    return fetchWithAuth<{ unread_count: number }>(`${API_URL}/notifications/unread-count`, {
+      method: 'GET',
+    });
+  },
+
+  markAsRead: async (notificationIds: string[]): Promise<ApiResponse<null>> => {
+    return fetchWithAuth<null>(`${API_URL}/notifications/mark-read`, {
+      method: 'POST',
+      body: JSON.stringify({ notification_ids: notificationIds }),
+    });
+  },
+
+  markAllAsRead: async (): Promise<ApiResponse<null>> => {
+    return fetchWithAuth<null>(`${API_URL}/notifications/mark-all-read`, {
+      method: 'POST',
+    });
+  },
+
+  delete: async (id: string): Promise<ApiResponse<null>> => {
+    return fetchWithAuth<null>(`${API_URL}/notifications/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  getPreferences: async (): Promise<ApiResponse<NotificationPreference[]>> => {
+    return fetchWithAuth<NotificationPreference[]>(`${API_URL}/notifications/preferences`, {
+      method: 'GET',
+    });
+  },
+
+  updatePreference: async (preference: NotificationPreference): Promise<ApiResponse<NotificationPreference>> => {
+    return fetchWithAuth<NotificationPreference>(`${API_URL}/notifications/preferences`, {
+      method: 'PUT',
+      body: JSON.stringify(preference),
     });
   },
 };
