@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { XCircle, ArrowRight, RefreshCcw } from 'lucide-react';
+import { XCircle, ArrowRight, RefreshCcw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function SubscriptionFailedPage() {
+function FailedContent() {
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(10);
 
@@ -76,5 +76,21 @@ export default function SubscriptionFailedPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SubscriptionFailedPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-100 p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="py-12">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto text-red-600" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <FailedContent />
+    </Suspense>
   );
 }

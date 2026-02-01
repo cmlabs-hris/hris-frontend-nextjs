@@ -25,7 +25,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar: () => voi
             // Only fetch if user has employee_id and is not pending
             if (user?.employee_id && user?.role !== 'pending') {
                 try {
-                    const response = await employeeApi.get();
+                    const response = await employeeApi.get(user.employee_id);
                     if (response.success && response.data) {
                         setAvatarUrl(getUploadUrl(response.data.avatar_url));
                         setEmployeeName(response.data.full_name);
