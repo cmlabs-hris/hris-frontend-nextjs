@@ -1,20 +1,40 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Menu, X, Users, BarChart3, Clock, Shield, ChevronRight, CheckCircle2, Star,} from 'lucide-react';
+import { Menu, X, Users, BarChart3, Clock, Shield, ChevronRight, CheckCircle2, Star, Loader2,} from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Link from "next/link";
+import { subscriptionApi, SubscriptionPlan } from '@/lib/api';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const HRISLanding = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [pricingMode, setPricingMode] = useState('package');
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true);
 
   const heroRef = useRef(null);
   const featuresRef = useRef(null);
   const statsRef = useRef(null);
+
+  // Fetch plans from backend
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const response = await subscriptionApi.getPlans();
+        if (response.success && response.data) {
+          setPlans(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch plans:', error);
+      } finally {
+        setIsLoadingPlans(false);
+      }
+    };
+    fetchPlans();
+  }, []);
   
 
   useEffect(() => {
@@ -99,14 +119,14 @@ const HRISLanding = () => {
 
   const testimonials = [
     {
-      name: "Sarah Johnson",
+      name: "Resi Nyimeng",
       role: "HR Manager",
       company: "Tech Corp",
       content: "HRIS telah mengubah cara kami mengelola SDM. Efisiensi meningkat 70%!",
       rating: 5
     },
     {
-      name: "Michael Chen",
+      name: "Paduka Sembiring",
       role: "CEO",
       company: "Startup Inc",
       content: "Platform terbaik untuk mengelola tim remote. Sangat direkomendasikan!",
@@ -321,7 +341,7 @@ const HRISLanding = () => {
       {/* Pricing Section */}
       <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16 animate-on-scroll opacity-0 translate-y-[30px] transition-all duration-700">
+          <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-[#1E3A5F] mb-4">
               HRIS Pricing Plans
             </h2>
@@ -350,107 +370,126 @@ const HRISLanding = () => {
             </div>
           </div>
 
-                    {/* Conditional Rendering for Pricing Cards */}
-          {pricingMode === 'package' ? (
-            // Package Pricing Cards
-            <div className="grid md:grid-cols-3 gap-8">
-              {/* Standard Plan */}
-              <div className="pricing-card animate-on-scroll opacity-0 translate-y-[30px] transition-all duration-700 delay-100">
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl p-8 h-full border-2 border-gray-200 hover:border-[#7CA5BF] hover:shadow-xl transition-all">
-                  <div className="text-sm text-gray-500 mb-2">Nama Paket</div>
-                  <div className="text-4xl font-bold text-gray-400 mb-1">Rp Harga</div>
-                  <div className="text-sm text-gray-500 mb-4">/ user/ month</div>
-                  <p className="text-gray-600 mb-6">Deskripsi jumlah karyawan yang bisa menggunakan</p>
-                  <button className="w-full py-3 bg-[#595959] text-white rounded-lg font-medium hover:bg-[#1E3A5F] transition-all mb-8">Upgrade Paket →</button>
-                  <div className="space-y-3 text-left">
-                    <div className="flex items-center gap-3 text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-400" /> <span className="text-sm">List fitur</span></div>
-                    <div className="flex items-center gap-3 text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-400" /> <span className="text-sm">GPS based attendance system</span></div>
-                    <div className="flex items-center gap-3 text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-400" /> <span className="text-sm">Employee data management</span></div>
-                    <div className="flex items-center gap-3 text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-400" /> <span className="text-sm">Leave & time-off requests</span></div>
-                    <div className="flex items-center gap-3 text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-400" /> <span className="text-sm">Overtime management</span></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Premium Plan - Featured */}
-              <div className="pricing-card animate-on-scroll opacity-0 translate-y-[30px] transition-all duration-700 delay-200 relative">
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-[#FFAB00] to-[#e69900] text-white px-4 py-1 rounded-full text-sm font-semibold">Most Popular</div>
-                <div className="bg-gradient-to-br from-[#595959] to-[#1E3A5F] rounded-3xl p-8 h-full shadow-2xl transform scale-105 hover:scale-110 transition-all">
-                  <div className="text-sm text-white/70 mb-2">Premium</div>
-                  <div className="text-4xl font-bold text-white mb-1">Rp Harga</div>
-                  <div className="text-sm text-white/70 mb-4">/ user/ month</div>
-                  <p className="text-white/80 mb-6">Best for growing business</p>
-                  <button className="w-full py-3 bg-white text-[#1E3A5F] rounded-lg font-medium hover:bg-gray-100 transition-all mb-8">Select a Package →</button>
-                  <div className="border-t border-white/20 mb-6"></div>
-                  <div className="text-white/90 font-semibold mb-4">All Standard Features</div>
-                  <div className="space-y-3 text-left">
-                    <div className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5" /> <span className="text-sm">Clock-in & clock-out attendance settings</span></div>
-                    <div className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5" /> <span className="text-sm">Fingerprint integration</span></div>
-                    <div className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5" /> <span className="text-sm">Employee document management</span></div>
-                    <div className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5" /> <span className="text-sm">Sick leave & time-off settings</span></div>
-                    <div className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5" /> <span className="text-sm">Task management</span></div>
-                    <div className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5" /> <span className="text-sm">Comprehensive reports</span></div>
-                    <div className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5" /> <span className="text-sm">Overtime management</span></div>
-                    <div className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5" /> <span className="text-sm">Reimbursement & custom regulations</span></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ultra Plan */}
-              <div className="pricing-card animate-on-scroll opacity-0 translate-y-[30px] transition-all duration-700 delay-300">
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl p-8 h-full border-2 border-gray-200 hover:border-[#7CA5BF] hover:shadow-xl transition-all">
-                  <div className="text-sm text-gray-500 mb-2">Ultra</div>
-                  <div className="text-4xl font-bold text-gray-400 mb-1">Rp Harga</div>
-                  <div className="text-sm text-gray-500 mb-4">/ user/ month</div>
-                  <p className="text-gray-600 mb-6">Deskripsi jumlah karyawan yang bisa menggunakan</p>
-                  <button className="w-full py-3 bg-[#595959] text-white rounded-lg font-medium hover:bg-[#1E3A5F] transition-all mb-8">Select a Package →</button>
-                  <div className="border-t border-gray-300 mb-6"></div>
-                  <div className="text-gray-900 font-semibold mb-4">All Premium Features</div>
-                  <div className="space-y-3 text-left">
-                    <div className="flex items-center gap-3 text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-400" /> <span className="text-sm">Face recognition</span></div>
-                    <div className="flex items-center gap-3 text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-400" /> <span className="text-sm">Automated check-out attendance</span></div>
-                    <div className="flex items-center gap-3 text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-400" /> <span className="text-sm">Employee turnover dashboard</span></div>
-                    <div className="flex items-center gap-3 text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-400" /> <span className="text-sm">Custom dashboard for statistics & analysis</span></div>
-                  </div>
-                </div>
-              </div>
+          {/* Loading State */}
+          {isLoadingPlans ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-[#1E3A5F]" />
             </div>
           ) : (
-            // Seat Pricing Cards
-            <div className="grid md:grid-cols-3 gap-8">
-              {/* Standard Seat */}
-              <div className="pricing-card animate-on-scroll opacity-0 translate-y-[30px] transition-all duration-700 delay-100">
-                <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-[#7CA5BF] hover:shadow-xl transition-all h-full">
-                  <div className="text-sm text-gray-500 mb-2">STANDARD</div>
-                  <div className="text-5xl font-bold text-gray-800 mb-1">Rp 15.000</div>
-                  <div className="text-sm text-gray-500 mb-4">/ user/ month</div>
-                  <p className="text-gray-600 mb-6">This package for 1 until 50 employee</p>
-                  <button className="w-full py-3 bg-[#595959] text-white rounded-lg font-medium hover:bg-[#1E3A5F] transition-all">Upgrade Paket →</button>
+            <>
+              {/* Dynamic Pricing Cards from Backend */}
+              {pricingMode === 'package' ? (
+                <div className="grid md:grid-cols-3 gap-8">
+                  {plans.map((plan, index) => {
+                    const isPopular = plan.tier_level === 2;
+                    const pricePerSeat = parseFloat(plan.price_per_seat);
+                    const formattedPrice = new Intl.NumberFormat('id-ID').format(pricePerSeat);
+                    
+                    return (
+                      <div 
+                        key={plan.id}
+                        className={`pricing-card ${isPopular ? 'relative' : ''}`}
+                      >
+                        {isPopular && (
+                          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-[#FFAB00] to-[#e69900] text-white px-4 py-1 rounded-full text-sm font-semibold z-10">
+                            Most Popular
+                          </div>
+                        )}
+                        <div className={`rounded-3xl p-8 h-full transition-all ${
+                          isPopular 
+                            ? 'bg-gradient-to-br from-[#595959] to-[#1E3A5F] shadow-2xl transform scale-105 hover:scale-110' 
+                            : 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 hover:border-[#7CA5BF] hover:shadow-xl'
+                        }`}>
+                          <div className={`text-sm mb-2 ${isPopular ? 'text-white/70' : 'text-gray-500'}`}>
+                            {plan.name}
+                          </div>
+                          <div className={`text-4xl font-bold mb-1 ${isPopular ? 'text-white' : 'text-gray-800'}`}>
+                            Rp {formattedPrice}
+                          </div>
+                          <div className={`text-sm mb-4 ${isPopular ? 'text-white/70' : 'text-gray-500'}`}>
+                            / user/ month
+                          </div>
+                          <p className={`mb-6 ${isPopular ? 'text-white/80' : 'text-gray-600'}`}>
+                            {plan.max_seats ? `Up to ${plan.max_seats} employees` : 'Unlimited employees'}
+                          </p>
+                          <Link 
+                            href="/auth"
+                            className={`block w-full py-3 rounded-lg font-medium transition-all mb-8 text-center ${
+                              isPopular 
+                                ? 'bg-white text-[#1E3A5F] hover:bg-gray-100' 
+                                : 'bg-[#595959] text-white hover:bg-[#1E3A5F]'
+                            }`}
+                          >
+                            Get Started →
+                          </Link>
+                          {isPopular && <div className="border-t border-white/20 mb-6"></div>}
+                          {!isPopular && plan.tier_level > 1 && <div className="border-t border-gray-300 mb-6"></div>}
+                          {plan.tier_level > 1 && (
+                            <div className={`font-semibold mb-4 ${isPopular ? 'text-white/90' : 'text-gray-900'}`}>
+                              All Previous Features +
+                            </div>
+                          )}
+                          <div className="space-y-3 text-left">
+                            {plan.features.map((feature) => (
+                              <div 
+                                key={feature.code} 
+                                className={`flex items-center gap-3 ${isPopular ? 'text-white' : 'text-gray-700'}`}
+                              >
+                                <CheckCircle2 className={`w-5 h-5 flex-shrink-0 ${isPopular ? '' : 'text-gray-400'}`} />
+                                <span className="text-sm">{feature.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-
-              {/* Premium Seat */}
-              <div className="pricing-card animate-on-scroll opacity-0 translate-y-[30px] transition-all duration-700 delay-200">
-                <div className="bg-white rounded-2xl p-8 border-2 border-[#1E3A5F] shadow-lg hover:shadow-2xl transition-all h-full">
-                  <div className="text-sm text-[#1E3A5F] mb-2 font-semibold">PREMIUM</div>
-                  <div className="text-5xl font-bold text-[#1E3A5F] mb-1">Rp 12.000</div>
-                  <div className="text-sm text-gray-500 mb-4">/ user/ month</div>
-                  <p className="text-gray-600 mb-6">This package for 51 until 100 employee</p>
-                  <button className="w-full py-3 bg-[#1E3A5F] text-white rounded-lg font-medium hover:bg-[#7CA5BF] transition-all">Upgrade Paket →</button>
+              ) : (
+                // Seat Pricing Cards
+                <div className="grid md:grid-cols-3 gap-8">
+                  {plans.map((plan, index) => {
+                    const isPopular = plan.tier_level === 2;
+                    const pricePerSeat = parseFloat(plan.price_per_seat);
+                    const formattedPrice = new Intl.NumberFormat('id-ID').format(pricePerSeat);
+                    
+                    return (
+                      <div 
+                        key={plan.id}
+                        className="pricing-card"
+                      >
+                        <div className={`bg-white rounded-2xl p-8 border-2 transition-all h-full ${
+                          isPopular 
+                            ? 'border-[#1E3A5F] shadow-lg hover:shadow-2xl' 
+                            : 'border-gray-200 hover:border-[#7CA5BF] hover:shadow-xl'
+                        }`}>
+                          <div className={`text-sm mb-2 ${isPopular ? 'text-[#1E3A5F] font-semibold' : 'text-gray-500'}`}>
+                            {plan.name.toUpperCase()}
+                          </div>
+                          <div className={`text-5xl font-bold mb-1 ${isPopular ? 'text-[#1E3A5F]' : 'text-gray-800'}`}>
+                            Rp {formattedPrice}
+                          </div>
+                          <div className="text-sm text-gray-500 mb-4">/ user/ month</div>
+                          <p className="text-gray-600 mb-6">
+                            {plan.max_seats ? `Up to ${plan.max_seats} employees` : 'Unlimited employees'}
+                          </p>
+                          <Link 
+                            href="/auth"
+                            className={`block w-full py-3 rounded-lg font-medium transition-all text-center ${
+                              isPopular 
+                                ? 'bg-[#1E3A5F] text-white hover:bg-[#7CA5BF]' 
+                                : 'bg-[#595959] text-white hover:bg-[#1E3A5F]'
+                            }`}
+                          >
+                            Get Started →
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-
-              {/* Ultra Seat */}
-              <div className="pricing-card animate-on-scroll opacity-0 translate-y-[30px] transition-all duration-700 delay-300">
-                <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-[#7CA5BF] hover:shadow-xl transition-all h-full">
-                  <div className="text-sm text-gray-500 mb-2">ULTRA</div>
-                  <div className="text-5xl font-bold text-gray-800 mb-1">Rp 19.000</div>
-                  <div className="text-sm text-gray-500 mb-4">/ user/ month</div>
-                  <p className="text-gray-600 mb-6">This package for 1 until 50 employee</p>
-                  <button className="w-full py-3 bg-[#595959] text-white rounded-lg font-medium hover:bg-[#1E3A5F] transition-all">Upgrade Paket →</button>
-                </div>
-              </div>
-            </div>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -458,7 +497,7 @@ const HRISLanding = () => {
       {/* Testimonials Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16 animate-on-scroll opacity-0 translate-y-[30px] transition-all duration-700">
+          <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-[#1E3A5F] mb-4">
               Dipercaya oleh <span className="bg-gradient-to-r from-[#BA3C54] to-[#C11D0A] bg-clip-text text-transparent">500+ Perusahaan</span>
             </h2>
@@ -469,8 +508,7 @@ const HRISLanding = () => {
             {testimonials.map((testimonial, index) => (
               <div
                 key={index}
-                className="animate-on-scroll opacity-0 translate-y-[30px] transition-all duration-700"
-                style={{ transitionDelay: `${index * 200}ms` }}
+                className=""
               >
                 <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all">
                   <div className="flex gap-1 mb-4">
@@ -498,7 +536,7 @@ const HRISLanding = () => {
       {/* CTA Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-gradient-to-r from-[#1E3A5F] via-[#7CA5BF] to-[#1E3A5F] rounded-3xl p-12 text-center shadow-2xl animate-on-scroll opacity-0 scale-95 transition-all duration-700">
+          <div className="bg-gradient-to-r from-[#1E3A5F] via-[#7CA5BF] to-[#1E3A5F] rounded-3xl p-12 text-center shadow-2xl">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Siap Transformasi HR Anda?
             </h2>

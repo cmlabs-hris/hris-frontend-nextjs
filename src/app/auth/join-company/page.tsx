@@ -10,10 +10,12 @@ import { useAuth } from '@/context/AuthContext';
 import { invitationApi, MyInvitation, ApiError, getUploadUrl } from '@/lib/api';
 import { Loader2, ArrowLeft, Building2, CheckCircle, User, MapPin, Calendar } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function JoinCompanyPage() {
     const router = useRouter();
     const { user, isAuthenticated, isLoading: authLoading, refreshAuth } = useAuth();
+    const { toast } = useToast();
     
     const [invitations, setInvitations] = useState<MyInvitation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -73,6 +75,13 @@ export default function JoinCompanyPage() {
             const response = await invitationApi.accept(invitation.token);
             if (response.success && response.data) {
                 setSuccessMessage(`Successfully joined ${response.data.company_name}! Redirecting...`);
+                
+                // Show success notification
+                toast({
+                    title: 'Welcome to the Team! 🎉',
+                    description: `You have successfully joined ${response.data.company_name}.`,
+                    duration: 5000,
+                });
                 
                 // Refresh token untuk mendapatkan JWT baru dengan company_id dan role: employee
                 const refreshSuccess = await refreshAuth();

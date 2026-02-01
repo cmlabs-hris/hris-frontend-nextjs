@@ -10,14 +10,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/AuthContext';
 import { companyApi, ApiError } from '@/lib/api';
-import { Loader2, ArrowLeft, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Loader2, ArrowLeft, Upload, X, Image as ImageIcon, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CreateCompanyPage() {
     const router = useRouter();
     const { user, isAuthenticated, isLoading: authLoading, refreshAuth } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
     
     const [companyName, setCompanyName] = useState('');
     const [companyUsername, setCompanyUsername] = useState('');
@@ -98,6 +100,13 @@ export default function CreateCompanyPage() {
             
             // Refresh token untuk mendapatkan JWT baru dengan company_id dan role: owner
             await refreshAuth();
+            
+            // Show success notification
+            toast({
+                title: 'Company Created Successfully! 🎉',
+                description: `Welcome to ${companyName}! You are now the owner of this company.`,
+                duration: 5000,
+            });
             
             // Redirect ke dashboard setelah berhasil
             router.push('/dashboard');

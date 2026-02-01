@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -8,12 +9,35 @@ import { PanelLeft, Search } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/AuthContext';
 import { ThemeToggle } from './ThemeToggle';
-import { NotificationBell } from './NotificationBell'; 
+import { NotificationBell } from './NotificationBell';
+import { employeeApi, getUploadUrl } from '@/lib/api';
 
 export default function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
     const pathname = usePathname();
     const { user, logout } = useAuth();
     const router = useRouter();
+    const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+    const [employeeName, setEmployeeName] = useState<string | undefined>(undefined);
+
+    // Fetch employee data for avatar
+    useEffect(() => {
+        const fetchEmployeeData = async () => {
+            // Only fetch if user has employee_id and is not pending
+            if (user?.employee_id && user?.role !== 'pending') {
+                try {
+                    const response = await employeeApi.get();
+                    if (response.success && response.data) {
+                        setAvatarUrl(getUploadUrl(response.data.avatar_url));
+                        setEmployeeName(response.data.full_name);
+                    }
+                } catch (error) {
+                    // Silently fail - user might not have employee data yet
+                    console.log('Employee data not available for header');
+                }
+            }
+        };
+        fetchEmployeeData();
+    }, [user?.employee_id, user?.role]);
 
     const getPageTitle = () => {
         const pathSegments = (pathname ?? '').split('/').filter(Boolean);
@@ -55,15 +79,15 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar: () => voi
                             className="overflow-hidden rounded-full"
                         >
                             <Avatar>
-                                <AvatarImage src="https://i.pravatar.cc/40" alt="User Avatar" />
-                                <AvatarFallback>{user?.email?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
+                                <AvatarImage src={avatarUrl} alt="User Avatar" />
+                                <AvatarFallback>{employeeName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
                             </Avatar>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>
                             <div className="flex flex-col">
-                                <span>{user?.email || 'My Account'}</span>
+                                <span>{employeeName || user?.email || 'My Account'}</span>
                                 <span className="text-xs font-normal text-muted-foreground capitalize">
                                     {user?.role || 'User'}
                                 </span>

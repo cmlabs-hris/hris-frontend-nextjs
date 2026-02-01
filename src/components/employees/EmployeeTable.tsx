@@ -81,6 +81,7 @@ const ViewEmployeeSheet = ({ employee, children }: { employee: EmployeeWithDetai
                     <div className="space-y-2">
                         <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Personal Information</h4>
                         <div className="border rounded-lg p-3">
+                            <DetailRow label="Email" value={employee.email} icon={FileBadge} />
                             <DetailRow label="Employee Code" value={employee.employee_code} icon={FileBadge} />
                             <DetailRow label="NIK" value={employee.nik} icon={FileBadge} />
                             <DetailRow label="Gender" value={employee.gender} icon={Users} />

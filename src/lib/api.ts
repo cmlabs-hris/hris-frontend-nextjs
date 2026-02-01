@@ -2,8 +2,10 @@
 // API Configuration & Types
 // ============================================
 
-const API_URL = 'http://localhost:8080/api/v1';
-const UPLOADS_URL = 'http://localhost:8080/uploads';
+import { ReactNode } from "react";
+
+const API_URL = 'https://widespread-laptop-expressed-cat.trycloudflare.com/api/v1';
+const UPLOADS_URL = 'https://widespread-laptop-expressed-cat.trycloudflare.com/uploads';
 
 // ============================================
 // Helper Functions
@@ -89,6 +91,12 @@ export interface ForgotPasswordRequest {
   email: string;
 }
 
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+  confirm_password: string;
+}
+
 export interface VerifyEmailRequest {
   token: string;
 }
@@ -167,6 +175,7 @@ export interface Employee {
 }
 
 export interface EmployeeWithDetails extends Employee {
+  email: ReactNode;
   position_name?: string;
   grade_name?: string;
   branch_name?: string;
@@ -1026,6 +1035,102 @@ export interface DailyAttendanceStats {
 }
 
 // ============================================
+// Subscription DTOs
+// ============================================
+
+export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'cancelled' | 'expired';
+export type InvoiceStatus = 'pending' | 'paid' | 'expired' | 'failed';
+export type BillingCycle = 'monthly' | 'yearly';
+
+export interface SubscriptionFeature {
+  code: string;
+  name: string;
+  description?: string;
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  price_per_seat: string;
+  tier_level: number;
+  max_seats?: number;
+  features: SubscriptionFeature[];
+}
+
+export interface SubscriptionResponse {
+  id: string;
+  status: SubscriptionStatus;
+  plan: SubscriptionPlan;
+  max_seats: number;
+  pending_max_seats?: number;
+  used_seats: number;
+  current_period_start: string;
+  current_period_end: string;
+  trial_ends_at?: string;
+  billing_cycle: BillingCycle;
+  auto_renew: boolean;
+  pending_plan?: SubscriptionPlan;
+  features: string[];
+}
+
+export interface SubscriptionInvoice {
+  id: string;
+  amount: string;
+  status: InvoiceStatus;
+  is_prorated: boolean;
+  plan_name: string;
+  seat_count: number;
+  price_per_seat: string;
+  billing_cycle: BillingCycle;
+  period_start: string;
+  period_end: string;
+  issue_date: string;
+  payment_url?: string;
+  expiry_date?: string;
+  paid_at?: string;
+  payment_method?: string;
+  payment_channel?: string;
+}
+
+export interface CheckoutRequest {
+  plan_id: string;
+  seat_count: number;
+  billing_cycle: BillingCycle;
+  payer_email: string;
+}
+
+export interface CheckoutResponse {
+  invoice: SubscriptionInvoice;
+  payment_url: string;
+  expires_at: string;
+}
+
+export interface UpgradeRequest {
+  plan_id: string;
+  seat_count: number;
+  payer_email: string;
+}
+
+export interface DowngradeRequest {
+  plan_id: string;
+}
+
+export interface ChangeSeatRequest {
+  seat_count: number;
+}
+
+export interface ChangeSeatResponse {
+  invoice?: SubscriptionInvoice;
+  message: string;
+  is_pending: boolean;
+  pending_max_seats?: number;
+}
+
+export interface CancelSubscriptionRequest {
+  reason?: string;
+}
+
+// ============================================
 // Token Management
 // ============================================
 
@@ -1333,6 +1438,15 @@ export const authApi = {
 
   forgotPassword: async (data: ForgotPasswordRequest): Promise<ApiResponse<null>> => {
     const response = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<null>(response);
+  },
+
+  resetPassword: async (data: ResetPasswordRequest): Promise<ApiResponse<null>> => {
+    const response = await fetch(`${API_URL}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -2487,6 +2601,89 @@ export const notificationApi = {
     return fetchWithAuth<NotificationPreference>(`${API_URL}/notifications/preferences`, {
       method: 'PUT',
       body: JSON.stringify(preference),
+    });
+  },
+};
+
+// ============================================
+// Subscription API
+// ============================================
+
+export const subscriptionApi = {
+  // Public - Get all available plans
+  getPlans: async (): Promise<ApiResponse<SubscriptionPlan[]>> => {
+    const response = await fetch(`${API_URL}/plans`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return handleResponse<SubscriptionPlan[]>(response);
+  },
+
+  // Get my subscription
+  getMySubscription: async (): Promise<ApiResponse<SubscriptionResponse>> => {
+    return fetchWithAuth<SubscriptionResponse>(`${API_URL}/subscription/my`, {
+      method: 'GET',
+    });
+  },
+
+  // Get all invoices
+  getInvoices: async (): Promise<ApiResponse<SubscriptionInvoice[]>> => {
+    return fetchWithAuth<SubscriptionInvoice[]>(`${API_URL}/subscription/invoices`, {
+      method: 'GET',
+    });
+  },
+
+  // Get single invoice
+  getInvoice: async (id: string): Promise<ApiResponse<SubscriptionInvoice>> => {
+    return fetchWithAuth<SubscriptionInvoice>(`${API_URL}/subscription/invoices/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  // Checkout - Create new subscription
+  checkout: async (data: CheckoutRequest): Promise<ApiResponse<CheckoutResponse>> => {
+    return fetchWithAuth<CheckoutResponse>(`${API_URL}/subscription/checkout`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Upgrade plan (immediate)
+  upgradePlan: async (data: UpgradeRequest): Promise<ApiResponse<CheckoutResponse>> => {
+    return fetchWithAuth<CheckoutResponse>(`${API_URL}/subscription/upgrade`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Downgrade plan (effective next period)
+  downgradePlan: async (data: DowngradeRequest): Promise<ApiResponse<{ message: string }>> => {
+    return fetchWithAuth<{ message: string }>(`${API_URL}/subscription/downgrade`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Cancel subscription
+  cancelSubscription: async (data?: CancelSubscriptionRequest): Promise<ApiResponse<{ message: string }>> => {
+    return fetchWithAuth<{ message: string }>(`${API_URL}/subscription/cancel`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+  },
+
+  // Change seats
+  changeSeats: async (data: ChangeSeatRequest): Promise<ApiResponse<ChangeSeatResponse>> => {
+    return fetchWithAuth<ChangeSeatResponse>(`${API_URL}/subscription/seats`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Cancel pending invoice
+  cancelPendingInvoice: async (invoiceId: string): Promise<ApiResponse<{ message: string }>> => {
+    return fetchWithAuth<{ message: string }>(`${API_URL}/subscription/invoices/${invoiceId}`, {
+      method: 'DELETE',
     });
   },
 };
